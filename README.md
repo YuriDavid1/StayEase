@@ -1,8 +1,9 @@
 # StayEase
-
-## Nome dos integrantes: Gabriel Vitório, Guilherme Halter, João Bagatoli, Lucas Oliveira, Wedley Schmoeller, Yuri Arins.
-
 Sistema de gerenciamento de hospedagem para pequenos hotéis e pousadas, desenvolvido para automatizar o processo de reservas, check-in, check-out e controle do estado dos quartos.
+
+## Nome dos integrantes
+
+Gabriel Vitório, Guilherme Halter, João Bagatoli, Lucas Oliveira, Wedley Schmoeller, Yuri Arins.
 
 ---
 
