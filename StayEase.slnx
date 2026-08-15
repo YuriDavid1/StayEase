@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="StayEase.Api/StayEase.Api.csproj" />
+  <Project Path="StayEase.App/stayease.app.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="StayEase.Tests/StayEase.Tests.csproj" />
+</Solution>
