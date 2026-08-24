@@ -1,14 +1,22 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+{/*adm*/}
 import Login from "./pages/login";
-import RoomsPage from "./pages/RoomsPage";
+import RoomsPage from "./pages/adm/RoomsPage";
+
+{/*usuario*/}
+import UserPage from "./pages/user/userPage";
+
 
 import Layout from "./components/layout/layout";
 
 import "./App.css";
 
+import UserProvider from "./lib/userProvider"; {/*Tirar quando tiver autenticação real */}
+
 function App() {
   return (
+    <UserProvider> {/* Utilizado para autenticação mockada enquanto não tem banco */}
     <BrowserRouter>
       <Routes>
 
@@ -17,13 +25,17 @@ function App() {
 
         {/* Com layout */}
         <Route element={<Layout />}>
-
+          {/*ADM */}
           <Route path="/quartos" element={<RoomsPage />} />
+
+          {/*Usuario */}
+          <Route path="/user" element={<UserPage />} />
 
         </Route>
 
       </Routes>
     </BrowserRouter>
+    </UserProvider>
   );
 }
 

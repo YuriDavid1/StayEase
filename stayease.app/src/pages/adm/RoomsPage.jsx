@@ -1,5 +1,5 @@
-import RoomForm from "../components/ui/RoomForm";
-import RoomList from "../components/ui/RoomList";
+import RoomForm from "../../components/ui/RoomForm";
+import RoomList from "../../components/ui/RoomList";
 import { useState } from "react";
 
 export default function RoomsPage() {
