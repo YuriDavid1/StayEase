@@ -26,4 +26,25 @@ public class Reservation
     public DateTime? ActualCheckOut { get; set; }
 
     public bool IsCancelled { get; set; } = false;
+
+    //[NotMapped]
+    //public string RoomNumber => Room?.Number ?? string.Empty;
+
+    //[NotMapped]
+    //public string GuestName => Guest?.Name ?? string.Empty;
+
+    public void CheckIn()
+    {
+        ActualCheckIn = DateTime.UtcNow;
+    }
+
+    public void CheckOut()
+    {
+        ActualCheckOut = DateTime.UtcNow;
+    }
+
+    public void Cancel()
+    {
+        IsCancelled = true;
+    }
 }
