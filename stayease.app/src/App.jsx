@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-{/*adm*/}
 import Login from "./pages/login";
+
+{/*adm*/}
 import RoomsPage from "./pages/adm/RoomsPage";
+import HomeADM from "./pages/adm/homeADM";
 
 {/*usuario*/}
 import UserPage from "./pages/user/userPage";
@@ -26,7 +28,9 @@ function App() {
         {/* Com layout */}
         <Route element={<Layout />}>
           {/*ADM */}
+          <Route path="/homeAdm" element={<HomeADM />} />
           <Route path="/quartos" element={<RoomsPage />} />
+
 
           {/*Usuario */}
           <Route path="/user" element={<UserPage />} />
