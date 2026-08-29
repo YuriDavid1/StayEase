@@ -11,7 +11,7 @@ import {
 
 import { Input } from "../../components/ui/input";
 
-function homeADM() {
+function dashboardADM() {
   const quartos = [ //retirar mocks para integração com back
     {
       id: 1,
@@ -240,4 +240,4 @@ function homeADM() {
   );
 }
 
-export default homeADM;
+export default dashboardADM;
