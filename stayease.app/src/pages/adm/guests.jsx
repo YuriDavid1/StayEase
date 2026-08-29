@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 
 import { Button } from "../../components/ui/button";
 
@@ -13,6 +15,7 @@ import {
 } from "../../components/ui/dialog";
 
 import { Input } from "../../components/ui/input";
+
 import { Label } from "../../components/ui/label";
 
 import {
@@ -33,7 +36,10 @@ const hospedeVazio = {
 };
 
 function Guests() {
-  // Dados mockados enquanto não existe banco
+  // --------------------------------------------------
+  // DADOS
+  // --------------------------------------------------
+
   const [hospedes, setHospedes] = useState([
     {
       id: 1,
@@ -58,10 +64,37 @@ function Guests() {
     },
   ]);
 
+  // --------------------------------------------------
+  // ESTADOS
+  // --------------------------------------------------
+
   const [aberto, setAberto] = useState(false);
+
   const [form, setForm] = useState(hospedeVazio);
 
-  // Salvar ou editar hóspede
+  // Busca por nome
+  const [buscaHospede, setBuscaHospede] = useState("");
+
+  // --------------------------------------------------
+  // BUSCA DE HÓSPEDES
+  // --------------------------------------------------
+
+  const hospedesFiltrados = useMemo(() => {
+    const termo = buscaHospede.trim().toLowerCase();
+
+    if (!termo) {
+      return hospedes;
+    }
+
+    return hospedes.filter((hospede) =>
+      hospede.nome.toLowerCase().includes(termo)
+    );
+  }, [hospedes, buscaHospede]);
+
+  // --------------------------------------------------
+  // SALVAR OU EDITAR
+  // --------------------------------------------------
+
   const salvar = () => {
     if (!form.nome.trim()) {
       toast.error("Informe o nome do hóspede.");
@@ -76,13 +109,13 @@ function Guests() {
       // Editar
       setHospedes((hospedesAtuais) =>
         hospedesAtuais.map((hospede) =>
-          hospede.id === form.id
-            ? form
-            : hospede
+          hospede.id === form.id ? form : hospede
         )
       );
 
-      toast.success(`Hóspede ${form.nome} atualizado.`);
+      toast.success(
+        `Hóspede ${form.nome} atualizado.`
+      );
     } else {
       // Criar
       const novoHospede = {
@@ -95,14 +128,19 @@ function Guests() {
         novoHospede,
       ]);
 
-      toast.success(`Hóspede ${form.nome} cadastrado.`);
+      toast.success(
+        `Hóspede ${form.nome} cadastrado.`
+      );
     }
 
     setAberto(false);
     setForm(hospedeVazio);
   };
 
-  // Abrir formulário para novo hóspede
+  // --------------------------------------------------
+  // NOVO HÓSPEDE
+  // --------------------------------------------------
+
   const novoHospede = () => {
     setForm({
       ...hospedeVazio,
@@ -112,13 +150,19 @@ function Guests() {
     setAberto(true);
   };
 
-  // Abrir formulário para edição
+  // --------------------------------------------------
+  // EDITAR HÓSPEDE
+  // --------------------------------------------------
+
   const editarHospede = (hospede) => {
     setForm({ ...hospede });
     setAberto(true);
   };
 
-  // Excluir hóspede
+  // --------------------------------------------------
+  // EXCLUIR HÓSPEDE
+  // --------------------------------------------------
+
   const removerHospede = (id) => {
     setHospedes((hospedesAtuais) =>
       hospedesAtuais.filter(
@@ -128,6 +172,10 @@ function Guests() {
 
     toast.success("Hóspede removido.");
   };
+
+  // --------------------------------------------------
+  // RENDER
+  // --------------------------------------------------
 
   return (
     <div className="space-y-6">
@@ -150,9 +198,36 @@ function Guests() {
         </Button>
       </header>
 
+      {/* Busca */}
+      <div className="relative max-w-md">
+        <Search
+          className="
+            pointer-events-none
+            absolute
+            left-3
+            top-1/2
+            h-4
+            w-4
+            -translate-y-1/2
+            text-muted-foreground
+          "
+        />
+
+        <Input
+          value={buscaHospede}
+          onChange={(e) =>
+            setBuscaHospede(e.target.value)
+          }
+          placeholder="Buscar hóspede por nome..."
+          className="pl-9"
+          aria-label="Buscar hóspede por nome"
+        />
+      </div>
+
       {/* Tabela */}
       <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
         <Table>
+
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
@@ -166,8 +241,9 @@ function Guests() {
           </TableHeader>
 
           <TableBody>
-            {hospedes.map((hospede) => (
+            {hospedesFiltrados.map((hospede) => (
               <TableRow key={hospede.id}>
+
                 <TableCell className="font-medium">
                   {hospede.nome}
                 </TableCell>
@@ -185,6 +261,7 @@ function Guests() {
                 </TableCell>
 
                 <TableCell className="text-right">
+
                   <Button
                     size="icon"
                     variant="ghost"
@@ -206,21 +283,24 @@ function Guests() {
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
+
                 </TableCell>
+
               </TableRow>
             ))}
 
-            {hospedes.length === 0 && (
+            {hospedesFiltrados.length === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={5}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  Nenhum hóspede cadastrado.
+                  Nenhum hóspede encontrado.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
+
         </Table>
       </div>
 
@@ -230,6 +310,7 @@ function Guests() {
         onOpenChange={setAberto}
       >
         <DialogContent>
+
           <DialogHeader>
             <DialogTitle>
               {hospedes.some(
@@ -318,6 +399,7 @@ function Guests() {
           </div>
 
           <DialogFooter>
+
             <Button
               variant="outline"
               onClick={() => {
@@ -331,7 +413,9 @@ function Guests() {
             <Button onClick={salvar}>
               Salvar
             </Button>
+
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
