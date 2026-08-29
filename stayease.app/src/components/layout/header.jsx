@@ -6,7 +6,6 @@ import {
   CalendarRange,
   LogOut,
   ShieldCheck,
-  Sparkles,
   Users,
 } from "lucide-react";
 
@@ -41,11 +40,6 @@ function Header() {
       to: "/schedulingAdm",
       label: "Reservas",
       icon: CalendarRange,
-    },
-    {
-      to: "/governanca",
-      label: "Governança",
-      icon: Sparkles,
     },
   ];
 
