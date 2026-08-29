@@ -38,7 +38,7 @@ function Header() {
       icon: Users,
     },
     {
-      to: "/reservas",
+      to: "/schedulingAdm",
       label: "Reservas",
       icon: CalendarRange,
     },
