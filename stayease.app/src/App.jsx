@@ -5,7 +5,8 @@ import Login from "./pages/login";
 {/*adm*/}
 import RoomsPage from "./pages/adm/RoomsPage";
 import DashboardADM from "./pages/adm/dashboardADM";
-import Administration from "./pages/adm/Administration"
+import Guests from "./pages/adm/guests"
+import UsersAdm from "./pages/adm/usersAdm"
 
 {/*usuario*/}
 import UserPage from "./pages/user/userPage";
@@ -30,8 +31,9 @@ function App() {
         <Route element={<Layout />}>
           {/*ADM */}
           <Route path="/homeAdm" element={<DashboardADM />} />
-          <Route path="/Rooms" element={<RoomsPage />} />
-          <Route path="/Adm" element={<Administration />} />
+          <Route path="/rooms" element={<RoomsPage />} />
+          <Route path="/guests" element={<Guests />} />
+          <Route path="/usersAdm" element={<UsersAdm />} />
 
 
           {/*Usuario */}

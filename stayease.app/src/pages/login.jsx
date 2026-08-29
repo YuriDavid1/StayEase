@@ -18,7 +18,7 @@ function Login() {
 
   function entrarComoAdmin() {
     login("admin");
-    navigate("/quartos");
+    navigate("/homeAdm");
   }
 
   function entrarComoUsuario() {
