@@ -48,7 +48,6 @@ import {
   TableRow,
 } from "../../components/ui/table";
 
-
 // --------------------------------------------------
 // FUNÇÕES AUXILIARES
 // --------------------------------------------------
@@ -60,6 +59,7 @@ function hojeISO() {
 function amanhaISO() {
   const data = new Date();
   data.setDate(data.getDate() + 1);
+
   return data.toISOString().slice(0, 10);
 }
 
@@ -88,7 +88,6 @@ function novoId(prefixo) {
     .substring(2, 8)}`;
 }
 
-
 // --------------------------------------------------
 // BADGE DE STATUS
 // --------------------------------------------------
@@ -111,13 +110,11 @@ function StatusQuartoBadge({ status }) {
   );
 }
 
-
 // --------------------------------------------------
 // COMPONENTE
 // --------------------------------------------------
 
 function Reservas() {
-
   // --------------------------------------------------
   // MOCKS
   // --------------------------------------------------
@@ -221,7 +218,6 @@ function Reservas() {
     },
   ]);
 
-
   // --------------------------------------------------
   // ESTADOS
   // --------------------------------------------------
@@ -243,10 +239,12 @@ function Reservas() {
     status: "Confirmada",
   });
 
-  // NOVO:
-  // termo usado para buscar hóspedes dentro do modal
+  // Busca de hóspedes dentro do modal
   const [buscaHospede, setBuscaHospede] = useState("");
 
+  // NOVO:
+  // Busca de hóspedes na lista principal de reservas
+  const [buscaHospedeLista, setBuscaHospedeLista] = useState("");
 
   // --------------------------------------------------
   // FUNÇÕES
@@ -270,9 +268,7 @@ function Reservas() {
     saida,
     reservaId
   ) => {
-
     return reservas.some((reserva) => {
-
       if (reserva.id === reservaId) {
         return false;
       }
@@ -292,11 +288,8 @@ function Reservas() {
     });
   };
 
-
   const quartosDisponiveis = (entrada, saida) => {
-
     return quartos.filter((quarto) => {
-
       if (quarto.status !== "Livre") {
         return false;
       }
@@ -310,9 +303,7 @@ function Reservas() {
     });
   };
 
-
   const motivoBloqueioCheckin = (reserva) => {
-
     if (!reserva) {
       return null;
     }
@@ -334,13 +325,11 @@ function Reservas() {
     return null;
   };
 
-
   // --------------------------------------------------
-  // BUSCA DE HÓSPEDES
+  // BUSCA DE HÓSPEDES DO MODAL
   // --------------------------------------------------
 
   const hospedesFiltrados = useMemo(() => {
-
     const termo = buscaHospede
       .trim()
       .toLowerCase();
@@ -352,48 +341,64 @@ function Reservas() {
     return hospedes.filter((hospede) =>
       hospede.nome.toLowerCase().includes(termo)
     );
-
   }, [hospedes, buscaHospede]);
 
+  // --------------------------------------------------
+  // BUSCA DE HÓSPEDES DA LISTA PRINCIPAL
+  // --------------------------------------------------
+
+  const reservasFiltradas = useMemo(() => {
+    const termo = buscaHospedeLista
+      .trim()
+      .toLowerCase();
+
+    // Se não digitou nada, mostra todas
+    if (!termo) {
+      return reservas;
+    }
+
+    return reservas.filter((reserva) => {
+      // Pega todos os hóspedes da reserva
+      const nomesHospedes = reserva.hospedeIds
+        .map((id) => hospedePorId(id)?.nome || "")
+        .join(" ")
+        .toLowerCase();
+
+      return nomesHospedes.includes(termo);
+    });
+  }, [reservas, hospedes, buscaHospedeLista]);
 
   // --------------------------------------------------
   // QUARTOS DISPONÍVEIS
   // --------------------------------------------------
 
   const disponiveis = useMemo(() => {
-
     return quartosDisponiveis(
       form.entrada,
       form.saida
     );
-
   }, [
     form.entrada,
     form.saida,
     reservas,
   ]);
 
-
   const disponiveisConsulta = useMemo(() => {
-
     return quartosDisponiveis(
       consulta.entrada,
       consulta.saida
     );
-
   }, [
     consulta.entrada,
     consulta.saida,
     reservas,
   ]);
 
-
   // --------------------------------------------------
   // SALVAR RESERVA
   // --------------------------------------------------
 
   const salvar = () => {
-
     if (
       form.hospedeIds.length === 0 ||
       !form.quartoId
@@ -406,7 +411,6 @@ function Reservas() {
     }
 
     if (form.saida <= form.entrada) {
-
       alert(
         "A data de saída deve ser posterior à entrada."
       );
@@ -417,7 +421,6 @@ function Reservas() {
     const quarto = quartoPorId(form.quartoId);
 
     if (quarto?.status !== "Livre") {
-
       alert(
         "Só é possível reservar quartos com status Livre."
       );
@@ -433,7 +436,6 @@ function Reservas() {
         form.id
       )
     ) {
-
       alert(
         "Já existe reserva para este quarto no período informado."
       );
@@ -443,14 +445,11 @@ function Reservas() {
 
     const novaReserva = {
       ...form,
-
       id: form.id || novoId("r"),
-
       responsavelId:
         form.responsavelId ||
         usuarioAtual?.id ||
         "",
-
       checkinEm: null,
       checkoutEm: null,
     };
@@ -463,30 +462,23 @@ function Reservas() {
     alert("Reserva registrada.");
 
     setAberto(false);
-
-    // Limpa a busca ao fechar/salvar
     setBuscaHospede("");
   };
-
 
   // --------------------------------------------------
   // HÓSPEDES
   // --------------------------------------------------
 
   const alternarHospede = (id) => {
-
     setForm((atual) => ({
-
       ...atual,
 
       hospedeIds:
         atual.hospedeIds.includes(id)
-
           ? atual.hospedeIds.filter(
               (hospedeId) =>
                 hospedeId !== id
             )
-
           : [
               ...atual.hospedeIds,
               id,
@@ -494,20 +486,16 @@ function Reservas() {
     }));
   };
 
-
   // --------------------------------------------------
   // CHECK-IN
   // --------------------------------------------------
 
   const realizarCheckin = (reserva) => {
-
     const bloqueio =
       motivoBloqueioCheckin(reserva);
 
     if (bloqueio) {
-
       alert(bloqueio);
-
       return;
     }
 
@@ -527,13 +515,11 @@ function Reservas() {
     alert("Check-in realizado.");
   };
 
-
   // --------------------------------------------------
   // CHECK-OUT
   // --------------------------------------------------
 
   const realizarCheckout = (reserva) => {
-
     setReservas((atual) =>
       atual.map((item) =>
         item.id === reserva.id
@@ -552,13 +538,11 @@ function Reservas() {
     );
   };
 
-
   // --------------------------------------------------
   // CANCELAR
   // --------------------------------------------------
 
   const cancelarReserva = (id) => {
-
     setReservas((atual) =>
       atual.map((reserva) =>
         reserva.id === id
@@ -573,13 +557,11 @@ function Reservas() {
     alert("Reserva cancelada.");
   };
 
-
   // --------------------------------------------------
   // REMOVER
   // --------------------------------------------------
 
   const removerReserva = (id) => {
-
     const confirmar = window.confirm(
       "Deseja realmente remover esta reserva?"
     );
@@ -596,13 +578,11 @@ function Reservas() {
     );
   };
 
-
   // --------------------------------------------------
   // RENDER
   // --------------------------------------------------
 
   return (
-
     <div className="space-y-6">
 
       {/* Cabeçalho */}
@@ -610,7 +590,6 @@ function Reservas() {
       <header className="flex flex-wrap items-end justify-between gap-3">
 
         <div>
-
           <h1 className="text-3xl font-semibold text-foreground">
             Reservas
           </h1>
@@ -618,13 +597,10 @@ function Reservas() {
           <p className="mt-1 text-sm text-muted-foreground">
             Estadias de hóspedes e histórico.
           </p>
-
         </div>
-
 
         <Button
           onClick={() => {
-
             setForm({
               id: novoId("r"),
               hospedeIds: [],
@@ -636,50 +612,38 @@ function Reservas() {
               status: "Confirmada",
             });
 
-            // Limpa a busca ao abrir
             setBuscaHospede("");
-
             setAberto(true);
           }}
         >
-
           <Plus className="h-4 w-4" />
-
           Nova reserva
-
         </Button>
 
       </header>
-
 
       {/* Modal */}
 
       <Dialog
         open={aberto}
         onOpenChange={(valor) => {
-
           setAberto(valor);
 
           if (!valor) {
             setBuscaHospede("");
           }
-
         }}
       >
 
         <DialogContent>
 
           <DialogHeader>
-
             <DialogTitle>
               Nova reserva
             </DialogTitle>
-
           </DialogHeader>
 
-
           <div className="grid gap-4 sm:grid-cols-2">
-
 
             {/* Entrada */}
 
@@ -705,7 +669,6 @@ function Reservas() {
 
             </div>
 
-
             {/* Saída */}
 
             <div className="space-y-2">
@@ -730,7 +693,6 @@ function Reservas() {
 
             </div>
 
-
             {/* Hóspedes */}
 
             <div className="space-y-2 sm:col-span-2">
@@ -739,8 +701,7 @@ function Reservas() {
                 Hóspedes da reserva
               </Label>
 
-
-              {/* BUSCA DE HÓSPEDE */}
+              {/* Busca no modal */}
 
               <div className="relative">
 
@@ -771,8 +732,7 @@ function Reservas() {
 
               </div>
 
-
-              {/* LISTA DE HÓSPEDES */}
+              {/* Lista */}
 
               <div className="max-h-40 space-y-2 overflow-auto rounded-lg border border-border/70 p-3">
 
@@ -780,7 +740,6 @@ function Reservas() {
 
                   hospedesFiltrados.map(
                     (hospede) => (
-
                       <label
                         key={hospede.id}
                         className="
@@ -812,7 +771,6 @@ function Reservas() {
                         </span>
 
                       </label>
-
                     )
                   )
 
@@ -825,9 +783,6 @@ function Reservas() {
                 )}
 
               </div>
-
-
-              {/* CONTADOR */}
 
               {form.hospedeIds.length > 0 && (
 
@@ -844,7 +799,6 @@ function Reservas() {
               )}
 
             </div>
-
 
             {/* Quarto */}
 
@@ -865,9 +819,7 @@ function Reservas() {
               >
 
                 <SelectTrigger>
-
                   <SelectValue placeholder="Selecione o quarto" />
-
                 </SelectTrigger>
 
                 <SelectContent>
@@ -879,12 +831,10 @@ function Reservas() {
                         key={quarto.id}
                         value={quarto.id}
                       >
-
                         {quarto.numero} —{" "}
                         {quarto.tipo}{" "}
                         (até{" "}
                         {quarto.capacidade})
-
                       </SelectItem>
 
                     )
@@ -894,14 +844,11 @@ function Reservas() {
 
               </Select>
 
-
               {disponiveis.length === 0 && (
 
                 <p className="text-xs text-coral">
-
                   Nenhum quarto Livre e sem
                   conflito neste período.
-
                 </p>
 
               )}
@@ -909,7 +856,6 @@ function Reservas() {
             </div>
 
           </div>
-
 
           <DialogFooter>
 
@@ -932,7 +878,6 @@ function Reservas() {
 
       </Dialog>
 
-
       {/* Consulta de disponibilidade */}
 
       <Card className="border-border/70">
@@ -948,7 +893,6 @@ function Reservas() {
           </CardTitle>
 
         </CardHeader>
-
 
         <CardContent className="space-y-3">
 
@@ -975,7 +919,6 @@ function Reservas() {
 
             </div>
 
-
             <div className="space-y-1">
 
               <Label htmlFor="c-saida">
@@ -999,13 +942,10 @@ function Reservas() {
 
           </div>
 
-
           <p className="text-sm text-muted-foreground">
 
             {disponiveisConsulta.length === 0
-
               ? "Nenhum quarto disponível no período."
-
               : `Disponíveis: ${disponiveisConsulta
                   .map(
                     (quarto) =>
@@ -1019,280 +959,310 @@ function Reservas() {
 
       </Card>
 
+      {/* Lista de hospedagens */}
 
-      {/* Tabela */}
+      <div className="space-y-3">
 
-      <div className="overflow-x-auto rounded-2xl border border-border/70 bg-card">
+        {/* Busca da lista */}
 
-        <Table>
+        <div className="relative max-w-md">
 
-          <TableHeader>
+          <Search
+            className="
+              pointer-events-none
+              absolute
+              left-3
+              top-1/2
+              h-4
+              w-4
+              -translate-y-1/2
+              text-muted-foreground
+            "
+          />
 
-            <TableRow>
+          <Input
+            value={buscaHospedeLista}
+            onChange={(e) =>
+              setBuscaHospedeLista(
+                e.target.value
+              )
+            }
+            placeholder="Buscar hospedagem por nome do hóspede"
+            className="pl-9"
+            aria-label="Buscar hospedagem por nome do hóspede"
+          />
 
-              <TableHead>
-                Hóspedes
-              </TableHead>
+        </div>
 
-              <TableHead>
-                Quarto
-              </TableHead>
+        {/* Tabela */}
 
-              <TableHead>
-                Período
-              </TableHead>
+        <div className="overflow-x-auto rounded-2xl border border-border/70 bg-card">
 
-              <TableHead>
-                Status do quarto
-              </TableHead>
+          <Table>
 
-              <TableHead>
-                Reserva
-              </TableHead>
+            <TableHeader>
 
-              <TableHead>
-                Check-in / Check-out
-              </TableHead>
+              <TableRow>
 
-              <TableHead>
-                Responsável
-              </TableHead>
+                <TableHead>
+                  Hóspedes
+                </TableHead>
 
-              <TableHead className="text-right">
-                Ações
-              </TableHead>
+                <TableHead>
+                  Quarto
+                </TableHead>
 
-            </TableRow>
+                <TableHead>
+                  Período
+                </TableHead>
 
-          </TableHeader>
+                <TableHead>
+                  Status do quarto
+                </TableHead>
 
+                <TableHead>
+                  Reserva
+                </TableHead>
 
-          <TableBody>
+                <TableHead>
+                  Check-in / Check-out
+                </TableHead>
 
-            {reservas.map((reserva) => {
+                <TableHead>
+                  Responsável
+                </TableHead>
 
-              const quarto =
-                quartoPorId(
-                  reserva.quartoId
-                );
+                <TableHead className="text-right">
+                  Ações
+                </TableHead>
 
-              const bloqueio =
-                motivoBloqueioCheckin(
-                  reserva
-                );
+              </TableRow>
 
+            </TableHeader>
 
-              return (
+            <TableBody>
 
-                <TableRow
-                  key={reserva.id}
-                >
+              {reservasFiltradas.map(
+                (reserva) => {
 
-                  <TableCell className="font-medium">
+                  const quarto =
+                    quartoPorId(
+                      reserva.quartoId
+                    );
 
-                    {reserva.hospedeIds
-                      .map(
-                        (id) =>
-                          hospedePorId(id)
-                            ?.nome || "—"
-                      )
-                      .join(", ") || "—"}
+                  const bloqueio =
+                    motivoBloqueioCheckin(
+                      reserva
+                    );
 
-                  </TableCell>
+                  return (
 
+                    <TableRow
+                      key={reserva.id}
+                    >
 
-                  <TableCell>
+                      <TableCell className="font-medium">
 
-                    {quarto
-                      ? `${quarto.numero} — ${quarto.tipo}`
-                      : "—"}
+                        {reserva.hospedeIds
+                          .map(
+                            (id) =>
+                              hospedePorId(
+                                id
+                              )?.nome ||
+                              "—"
+                          )
+                          .join(", ") ||
+                          "—"}
 
-                  </TableCell>
+                      </TableCell>
 
+                      <TableCell>
 
-                  <TableCell>
+                        {quarto
+                          ? `${quarto.numero} — ${quarto.tipo}`
+                          : "—"}
 
-                    {dataBR(
-                      reserva.entrada
-                    )}
+                      </TableCell>
 
-                    {" → "}
+                      <TableCell>
 
-                    {dataBR(
-                      reserva.saida
-                    )}
+                        {dataBR(
+                          reserva.entrada
+                        )}
 
-                  </TableCell>
+                        {" → "}
 
+                        {dataBR(
+                          reserva.saida
+                        )}
 
-                  <TableCell>
+                      </TableCell>
 
-                    {quarto ? (
+                      <TableCell>
 
-                      <StatusQuartoBadge
-                        status={quarto.status}
-                      />
+                        {quarto ? (
 
-                    ) : (
-
-                      "—"
-
-                    )}
-
-                  </TableCell>
-
-
-                  <TableCell>
-                    {reserva.status}
-                  </TableCell>
-
-
-                  <TableCell className="text-xs text-muted-foreground">
-
-                    {dataHoraBR(
-                      reserva.checkinEm
-                    )}
-
-                    {" / "}
-
-                    {dataHoraBR(
-                      reserva.checkoutEm
-                    )}
-
-                  </TableCell>
-
-
-                  <TableCell className="text-sm text-muted-foreground">
-
-                    {usuarioPorId(
-                      reserva.responsavelId
-                    )?.nome || "—"}
-
-                  </TableCell>
-
-
-                  <TableCell className="text-right">
-
-                    <div className="flex items-center justify-end gap-2">
-
-                      {reserva.status ===
-                        "Confirmada" && (
-
-                        <>
-
-                          <Button
-                            size="sm"
-                            disabled={!!bloqueio}
-                            onClick={() =>
-                              realizarCheckin(
-                                reserva
-                              )
+                          <StatusQuartoBadge
+                            status={
+                              quarto.status
                             }
-                          >
-                            Check-in
-                          </Button>
+                          />
 
+                        ) : (
+                          "—"
+                        )}
+
+                      </TableCell>
+
+                      <TableCell>
+                        {reserva.status}
+                      </TableCell>
+
+                      <TableCell className="text-xs text-muted-foreground">
+
+                        {dataHoraBR(
+                          reserva.checkinEm
+                        )}
+
+                        {" / "}
+
+                        {dataHoraBR(
+                          reserva.checkoutEm
+                        )}
+
+                      </TableCell>
+
+                      <TableCell className="text-sm text-muted-foreground">
+
+                        {usuarioPorId(
+                          reserva.responsavelId
+                        )?.nome || "—"}
+
+                      </TableCell>
+
+                      <TableCell className="text-right">
+
+                        <div className="flex items-center justify-end gap-2">
+
+                          {reserva.status ===
+                            "Confirmada" && (
+
+                            <>
+
+                              <Button
+                                size="sm"
+                                disabled={
+                                  !!bloqueio
+                                }
+                                onClick={() =>
+                                  realizarCheckin(
+                                    reserva
+                                  )
+                                }
+                              >
+                                Check-in
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  cancelarReserva(
+                                    reserva.id
+                                  )
+                                }
+                              >
+
+                                <XCircle className="h-4 w-4" />
+
+                                Cancelar
+
+                              </Button>
+
+                            </>
+
+                          )}
+
+                          {reserva.status ===
+                            "Hospedado" && (
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                realizarCheckout(
+                                  reserva
+                                )
+                              }
+                            >
+                              Check-out
+                            </Button>
+
+                          )}
 
                           <Button
-                            size="sm"
-                            variant="outline"
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Remover reserva"
                             onClick={() =>
-                              cancelarReserva(
+                              removerReserva(
                                 reserva.id
                               )
                             }
                           >
 
-                            <XCircle className="h-4 w-4" />
-
-                            Cancelar
+                            <Trash2 className="h-4 w-4 text-destructive" />
 
                           </Button>
 
-                        </>
+                        </div>
 
-                      )}
+                        {reserva.status ===
+                          "Confirmada" &&
+                          bloqueio && (
 
+                            <p className="mt-1 flex items-center justify-end gap-1 text-xs text-coral">
 
-                      {reserva.status ===
-                        "Hospedado" && (
+                              <AlertTriangle className="h-3.5 w-3.5" />
 
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            realizarCheckout(
-                              reserva
-                            )
-                          }
-                        >
-                          Check-out
-                        </Button>
+                              {bloqueio}
 
-                      )}
+                            </p>
 
+                          )}
 
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label="Remover reserva"
-                        onClick={() =>
-                          removerReserva(
-                            reserva.id
-                          )
-                        }
-                      >
+                      </TableCell>
 
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </TableRow>
 
-                      </Button>
+                  );
+                }
+              )}
 
-                    </div>
+              {/* Nenhum resultado da busca */}
 
+              {reservasFiltradas.length === 0 && (
+                <TableRow>
 
-                    {reserva.status ===
-                      "Confirmada" &&
-                      bloqueio && (
+                  <TableCell
+                    colSpan={8}
+                    className="h-24 text-center text-muted-foreground"
+                  >
 
-                        <p className="mt-1 flex items-center justify-end gap-1 text-xs text-coral">
-
-                          <AlertTriangle className="h-3.5 w-3.5" />
-
-                          {bloqueio}
-
-                        </p>
-
-                      )}
+                    {buscaHospedeLista.trim()
+                      ? "Nenhuma hospedagem encontrada para este hóspede."
+                      : "Nenhuma reserva cadastrada."}
 
                   </TableCell>
 
                 </TableRow>
+              )}
 
-              );
+            </TableBody>
 
-            })}
+          </Table>
 
-
-            {reservas.length === 0 && (
-
-              <TableRow>
-
-                <TableCell
-                  colSpan={8}
-                  className="h-24 text-center text-muted-foreground"
-                >
-
-                  Nenhuma reserva cadastrada.
-
-                </TableCell>
-
-              </TableRow>
-
-            )}
-
-          </TableBody>
-
-        </Table>
+        </div>
 
       </div>
 
