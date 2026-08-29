@@ -29,6 +29,7 @@ import {
 } from "../../components/ui/dialog";
 
 import { Input } from "../../components/ui/input";
+
 import { Label } from "../../components/ui/label";
 
 import {
@@ -58,6 +59,7 @@ function hojeISO() {
 
 function amanhaISO() {
   const data = new Date();
+
   data.setDate(data.getDate() + 1);
 
   return data.toISOString().slice(0, 10);
@@ -96,13 +98,15 @@ function StatusQuartoBadge({ status }) {
   const estilos = {
     Livre: "bg-green-100 text-green-700",
     Ocupado: "bg-red-100 text-red-700",
-    "Limpeza Pendente": "bg-yellow-100 text-yellow-700",
+    "Limpeza Pendente":
+      "bg-yellow-100 text-yellow-700",
   };
 
   return (
     <span
       className={`rounded-full px-3 py-1 text-xs font-medium ${
-        estilos[status] || "bg-slate-100 text-slate-600"
+        estilos[status] ||
+        "bg-slate-100 text-slate-600"
       }`}
     >
       {status}
@@ -240,26 +244,37 @@ function Reservas() {
   });
 
   // Busca de hóspedes dentro do modal
-  const [buscaHospede, setBuscaHospede] = useState("");
+  const [buscaHospede, setBuscaHospede] =
+    useState("");
 
-  // NOVO:
-  // Busca de hóspedes na lista principal de reservas
-  const [buscaHospedeLista, setBuscaHospedeLista] = useState("");
+  // Busca de hóspedes na lista principal
+  const [buscaHospedeLista, setBuscaHospedeLista] =
+    useState("");
+
+  // NOVO: filtro por data de entrada
+  const [filtroData, setFiltroData] =
+    useState("");
 
   // --------------------------------------------------
   // FUNÇÕES
   // --------------------------------------------------
 
   const hospedePorId = (id) => {
-    return hospedes.find((hospede) => hospede.id === id);
+    return hospedes.find(
+      (hospede) => hospede.id === id
+    );
   };
 
   const quartoPorId = (id) => {
-    return quartos.find((quarto) => quarto.id === id);
+    return quartos.find(
+      (quarto) => quarto.id === id
+    );
   };
 
   const usuarioPorId = (id) => {
-    return usuarios.find((usuario) => usuario.id === id);
+    return usuarios.find(
+      (usuario) => usuario.id === id
+    );
   };
 
   const conflitoDeDatas = (
@@ -288,7 +303,10 @@ function Reservas() {
     });
   };
 
-  const quartosDisponiveis = (entrada, saida) => {
+  const quartosDisponiveis = (
+    entrada,
+    saida
+  ) => {
     return quartos.filter((quarto) => {
       if (quarto.status !== "Livre") {
         return false;
@@ -339,12 +357,14 @@ function Reservas() {
     }
 
     return hospedes.filter((hospede) =>
-      hospede.nome.toLowerCase().includes(termo)
+      hospede.nome
+        .toLowerCase()
+        .includes(termo)
     );
   }, [hospedes, buscaHospede]);
 
   // --------------------------------------------------
-  // BUSCA DE HÓSPEDES DA LISTA PRINCIPAL
+  // BUSCA + FILTRO DA LISTA PRINCIPAL
   // --------------------------------------------------
 
   const reservasFiltradas = useMemo(() => {
@@ -352,21 +372,46 @@ function Reservas() {
       .trim()
       .toLowerCase();
 
-    // Se não digitou nada, mostra todas
-    if (!termo) {
-      return reservas;
-    }
-
     return reservas.filter((reserva) => {
-      // Pega todos os hóspedes da reserva
+      // ----------------------------------------------
+      // Filtro por nome do hóspede
+      // ----------------------------------------------
+
       const nomesHospedes = reserva.hospedeIds
-        .map((id) => hospedePorId(id)?.nome || "")
+        .map(
+          (id) =>
+            hospedePorId(id)?.nome || ""
+        )
         .join(" ")
         .toLowerCase();
 
-      return nomesHospedes.includes(termo);
+      const correspondeAoNome =
+        !termo ||
+        nomesHospedes.includes(termo);
+
+      // ----------------------------------------------
+      // Filtro por data de entrada
+      // ----------------------------------------------
+
+      const correspondeAData =
+        !filtroData ||
+        reserva.entrada === filtroData;
+
+      // ----------------------------------------------
+      // Os dois filtros precisam ser atendidos
+      // ----------------------------------------------
+
+      return (
+        correspondeAoNome &&
+        correspondeAData
+      );
     });
-  }, [reservas, hospedes, buscaHospedeLista]);
+  }, [
+    reservas,
+    hospedes,
+    buscaHospedeLista,
+    filtroData,
+  ]);
 
   // --------------------------------------------------
   // QUARTOS DISPONÍVEIS
@@ -462,6 +507,7 @@ function Reservas() {
     alert("Reserva registrada.");
 
     setAberto(false);
+
     setBuscaHospede("");
   };
 
@@ -496,6 +542,7 @@ function Reservas() {
 
     if (bloqueio) {
       alert(bloqueio);
+
       return;
     }
 
@@ -579,6 +626,15 @@ function Reservas() {
   };
 
   // --------------------------------------------------
+  // LIMPAR FILTROS
+  // --------------------------------------------------
+
+  const limparFiltros = () => {
+    setBuscaHospedeLista("");
+    setFiltroData("");
+  };
+
+  // --------------------------------------------------
   // RENDER
   // --------------------------------------------------
 
@@ -613,10 +669,12 @@ function Reservas() {
             });
 
             setBuscaHospede("");
+
             setAberto(true);
           }}
         >
           <Plus className="h-4 w-4" />
+
           Nova reserva
         </Button>
 
@@ -638,9 +696,11 @@ function Reservas() {
         <DialogContent>
 
           <DialogHeader>
+
             <DialogTitle>
               Nova reserva
             </DialogTitle>
+
           </DialogHeader>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -740,6 +800,7 @@ function Reservas() {
 
                   hospedesFiltrados.map(
                     (hospede) => (
+
                       <label
                         key={hospede.id}
                         className="
@@ -771,6 +832,7 @@ function Reservas() {
                         </span>
 
                       </label>
+
                     )
                   )
 
@@ -819,7 +881,9 @@ function Reservas() {
               >
 
                 <SelectTrigger>
+
                   <SelectValue placeholder="Selecione o quarto" />
+
                 </SelectTrigger>
 
                 <SelectContent>
@@ -963,34 +1027,75 @@ function Reservas() {
 
       <div className="space-y-3">
 
-        {/* Busca da lista */}
+        {/* Busca e filtros */}
 
-        <div className="relative max-w-md">
+        <div className="flex flex-wrap items-end gap-3">
 
-          <Search
-            className="
-              pointer-events-none
-              absolute
-              left-3
-              top-1/2
-              h-4
-              w-4
-              -translate-y-1/2
-              text-muted-foreground
-            "
-          />
+          {/* Busca por hóspede */}
 
-          <Input
-            value={buscaHospedeLista}
-            onChange={(e) =>
-              setBuscaHospedeLista(
-                e.target.value
-              )
-            }
-            placeholder="Buscar hospedagem por nome do hóspede"
-            className="pl-9"
-            aria-label="Buscar hospedagem por nome do hóspede"
-          />
+          <div className="relative w-full max-w-md">
+
+            <Search
+              className="
+                pointer-events-none
+                absolute
+                left-3
+                top-1/2
+                h-4
+                w-4
+                -translate-y-1/2
+                text-muted-foreground
+              "
+            />
+
+            <Input
+              value={buscaHospedeLista}
+              onChange={(e) =>
+                setBuscaHospedeLista(
+                  e.target.value
+                )
+              }
+              placeholder="Buscar por nome do hóspede"
+              className="pl-9"
+              aria-label="Buscar por nome do hóspede"
+            />
+
+          </div>
+
+          {/* Filtro por data */}
+
+          <div className="space-y-1">
+
+            <Label htmlFor="filtro-data">
+              Data de entrada
+            </Label>
+
+            <Input
+              id="filtro-data"
+              type="date"
+              value={filtroData}
+              onChange={(e) =>
+                setFiltroData(
+                  e.target.value
+                )
+              }
+            />
+
+          </div>
+
+          {/* Limpar filtros */}
+
+          {(buscaHospedeLista ||
+            filtroData) && (
+
+            <Button
+              variant="outline"
+              onClick={limparFiltros}
+            >
+              Limpar filtros
+            </Button>
+
+          )}
 
         </div>
 
@@ -1109,7 +1214,9 @@ function Reservas() {
                           />
 
                         ) : (
+
                           "—"
+
                         )}
 
                       </TableCell>
@@ -1239,9 +1346,11 @@ function Reservas() {
                 }
               )}
 
-              {/* Nenhum resultado da busca */}
+              {/* Nenhum resultado */}
 
-              {reservasFiltradas.length === 0 && (
+              {reservasFiltradas.length ===
+                0 && (
+
                 <TableRow>
 
                   <TableCell
@@ -1249,13 +1358,19 @@ function Reservas() {
                     className="h-24 text-center text-muted-foreground"
                   >
 
-                    {buscaHospedeLista.trim()
-                      ? "Nenhuma hospedagem encontrada para este hóspede."
-                      : "Nenhuma reserva cadastrada."}
+                    {buscaHospedeLista.trim() &&
+                    filtroData
+                      ? "Nenhuma hospedagem encontrada para este hóspede nesta data."
+                      : buscaHospedeLista.trim()
+                        ? "Nenhuma hospedagem encontrada para este hóspede."
+                        : filtroData
+                          ? "Nenhuma hospedagem encontrada nesta data."
+                          : "Nenhuma reserva cadastrada."}
 
                   </TableCell>
 
                 </TableRow>
+
               )}
 
             </TableBody>
