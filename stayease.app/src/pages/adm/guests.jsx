@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 
 import { toast } from "sonner";
 
@@ -27,57 +27,40 @@ import {
   TableRow,
 } from "../../components/ui/table";
 
+import {
+  createGuest,
+  deleteGuest,
+  fetchGuestReservations,
+  fetchGuests,
+  updateGuest,
+} from "../../services/guestsService";
+
 const hospedeVazio = {
   id: "",
   nome: "",
   documento: "",
-  telefone: "",
-  email: "",
+  contato: "",
 };
 
 function Guests() {
-  // --------------------------------------------------
-  // DADOS
-  // --------------------------------------------------
-
-  const [hospedes, setHospedes] = useState([
-    {
-      id: 1,
-      nome: "João da Silva",
-      documento: "123.456.789-00",
-      telefone: "(47) 99999-1111",
-      email: "joao@email.com",
-    },
-    {
-      id: 2,
-      nome: "Maria Oliveira",
-      documento: "987.654.321-00",
-      telefone: "(47) 98888-2222",
-      email: "maria@email.com",
-    },
-    {
-      id: 3,
-      nome: "Carlos Souza",
-      documento: "456.789.123-00",
-      telefone: "(47) 97777-3333",
-      email: "carlos@email.com",
-    },
-  ]);
-
-  // --------------------------------------------------
-  // ESTADOS
-  // --------------------------------------------------
-
+  const [hospedes, setHospedes] = useState([]);
   const [aberto, setAberto] = useState(false);
-
   const [form, setForm] = useState(hospedeVazio);
-
-  // Busca por nome
   const [buscaHospede, setBuscaHospede] = useState("");
 
-  // --------------------------------------------------
-  // BUSCA DE HÓSPEDES
-  // --------------------------------------------------
+  const carregarHospedes = async () => {
+    try {
+      const dados = await fetchGuests();
+      setHospedes(dados);
+    } catch {
+      setHospedes([]);
+      toast.error("Não foi possível carregar os hóspedes.");
+    }
+  };
+
+  useEffect(() => {
+    carregarHospedes();
+  }, []);
 
   const hospedesFiltrados = useMemo(() => {
     const termo = buscaHospede.trim().toLowerCase();
@@ -87,106 +70,75 @@ function Guests() {
     }
 
     return hospedes.filter((hospede) =>
-      hospede.nome.toLowerCase().includes(termo)
+      String(hospede.nome).toLowerCase().includes(termo)
     );
   }, [hospedes, buscaHospede]);
 
-  // --------------------------------------------------
-  // SALVAR OU EDITAR
-  // --------------------------------------------------
-
-  const salvar = () => {
-    if (!form.nome.trim()) {
-      toast.error("Informe o nome do hóspede.");
+  const salvar = async () => {
+    if (!form.nome.trim() || !form.documento.trim() || !form.contato.trim()) {
+      toast.error("Informe nome, documento e contato do hóspede.");
       return;
     }
 
-    const existe = hospedes.some(
-      (hospede) => hospede.id === form.id
-    );
+    try {
+      if (form.id) {
+        const atualizado = await updateGuest(form.id, form);
+        setHospedes((atual) =>
+          atual.map((hospede) =>
+            hospede.id === atualizado.id ? atualizado : hospede
+          )
+        );
+        toast.success(`Hóspede ${form.nome} atualizado.`);
+      } else {
+        const criado = await createGuest(form);
+        setHospedes((atual) => [...atual, criado]);
+        toast.success(`Hóspede ${form.nome} cadastrado.`);
+      }
 
-    if (existe) {
-      // Editar
-      setHospedes((hospedesAtuais) =>
-        hospedesAtuais.map((hospede) =>
-          hospede.id === form.id ? form : hospede
-        )
-      );
-
-      toast.success(
-        `Hóspede ${form.nome} atualizado.`
-      );
-    } else {
-      // Criar
-      const novoHospede = {
-        ...form,
-        id: Date.now(),
-      };
-
-      setHospedes((hospedesAtuais) => [
-        ...hospedesAtuais,
-        novoHospede,
-      ]);
-
-      toast.success(
-        `Hóspede ${form.nome} cadastrado.`
-      );
+      setAberto(false);
+      setForm(hospedeVazio);
+    } catch (error) {
+      toast.error(error.message || "Não foi possível salvar o hóspede.");
     }
-
-    setAberto(false);
-    setForm(hospedeVazio);
   };
-
-  // --------------------------------------------------
-  // NOVO HÓSPEDE
-  // --------------------------------------------------
 
   const novoHospede = () => {
-    setForm({
-      ...hospedeVazio,
-      id: "",
-    });
-
+    setForm({ ...hospedeVazio, id: "" });
     setAberto(true);
   };
-
-  // --------------------------------------------------
-  // EDITAR HÓSPEDE
-  // --------------------------------------------------
 
   const editarHospede = (hospede) => {
-    setForm({ ...hospede });
+    setForm({
+      id: hospede.id,
+      nome: hospede.nome,
+      documento: hospede.documento,
+      contato: hospede.contato,
+    });
     setAberto(true);
   };
 
-  // --------------------------------------------------
-  // EXCLUIR HÓSPEDE
-  // --------------------------------------------------
+  const removerHospede = async (id) => {
+    try {
+      const reservas = await fetchGuestReservations(id);
 
-  const removerHospede = (id) => {
-    setHospedes((hospedesAtuais) =>
-      hospedesAtuais.filter(
-        (hospede) => hospede.id !== id
-      )
-    );
+      if (reservas.length > 0) {
+        toast.error("Este hóspede possui histórico de reservas e não pode ser excluído.");
+        return;
+      }
 
-    toast.success("Hóspede removido.");
+      await deleteGuest(id);
+      setHospedes((atual) => atual.filter((item) => item.id !== id));
+      toast.success("Hóspede removido.");
+    } catch (error) {
+      toast.error(error.message || "Não foi possível remover o hóspede.");
+    }
   };
-
-  // --------------------------------------------------
-  // RENDER
-  // --------------------------------------------------
 
   return (
     <div className="space-y-6">
-
-      {/* Cabeçalho */}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="mt-1 text-3xl font-semibold text-foreground">
-            Hóspedes
-          </h1>
-
+          <h1 className="mt-1 text-3xl font-semibold text-foreground">Hóspedes</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Gerencie os hóspedes cadastrados no sistema.
           </p>
@@ -198,77 +150,40 @@ function Guests() {
         </Button>
       </header>
 
-      {/* Busca */}
       <div className="relative max-w-md">
-        <Search
-          className="
-            pointer-events-none
-            absolute
-            left-3
-            top-1/2
-            h-4
-            w-4
-            -translate-y-1/2
-            text-muted-foreground
-          "
-        />
-
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={buscaHospede}
-          onChange={(e) =>
-            setBuscaHospede(e.target.value)
-          }
+          onChange={(e) => setBuscaHospede(e.target.value)}
           placeholder="Buscar hóspede por nome..."
           className="pl-9"
           aria-label="Buscar hóspede por nome"
         />
       </div>
 
-      {/* Tabela */}
       <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
         <Table>
-
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>Documento</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>E-mail</TableHead>
-              <TableHead className="text-right">
-                Ações
-              </TableHead>
+              <TableHead>Contato</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {hospedesFiltrados.map((hospede) => (
               <TableRow key={hospede.id}>
-
-                <TableCell className="font-medium">
-                  {hospede.nome}
-                </TableCell>
-
-                <TableCell>
-                  {hospede.documento}
-                </TableCell>
-
-                <TableCell>
-                  {hospede.telefone}
-                </TableCell>
-
-                <TableCell>
-                  {hospede.email}
-                </TableCell>
-
+                <TableCell className="font-medium">{hospede.nome}</TableCell>
+                <TableCell>{hospede.documento}</TableCell>
+                <TableCell>{hospede.contato}</TableCell>
                 <TableCell className="text-right">
-
                   <Button
                     size="icon"
                     variant="ghost"
                     aria-label={`Editar ${hospede.nome}`}
-                    onClick={() =>
-                      editarHospede(hospede)
-                    }
+                    onClick={() => editarHospede(hospede)}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -277,129 +192,61 @@ function Guests() {
                     size="icon"
                     variant="ghost"
                     aria-label={`Remover ${hospede.nome}`}
-                    onClick={() =>
-                      removerHospede(hospede.id)
-                    }
+                    onClick={() => removerHospede(hospede.id)}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
-
                 </TableCell>
-
               </TableRow>
             ))}
 
             {hospedesFiltrados.length === 0 && (
               <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="h-24 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                   Nenhum hóspede encontrado.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
-
         </Table>
       </div>
 
-      {/* Modal */}
-      <Dialog
-        open={aberto}
-        onOpenChange={setAberto}
-      >
+      <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent>
-
           <DialogHeader>
-            <DialogTitle>
-              {hospedes.some(
-                (hospede) => hospede.id === form.id
-              )
-                ? "Editar hóspede"
-                : "Novo hóspede"}
-            </DialogTitle>
+            <DialogTitle>{form.id ? "Editar hóspede" : "Novo hóspede"}</DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4 sm:grid-cols-2">
-
-            {/* Nome */}
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="nome">
-                Nome completo
-              </Label>
-
+              <Label htmlFor="nome">Nome completo</Label>
               <Input
                 id="nome"
                 value={form.nome}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    nome: e.target.value,
-                  })
-                }
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
               />
             </div>
 
-            {/* Documento */}
             <div className="space-y-2">
-              <Label htmlFor="documento">
-                Documento
-              </Label>
-
+              <Label htmlFor="documento">Documento</Label>
               <Input
                 id="documento"
                 value={form.documento}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    documento: e.target.value,
-                  })
-                }
+                onChange={(e) => setForm({ ...form, documento: e.target.value })}
               />
             </div>
 
-            {/* Telefone */}
             <div className="space-y-2">
-              <Label htmlFor="telefone">
-                Telefone
-              </Label>
-
+              <Label htmlFor="contato">Contato</Label>
               <Input
-                id="telefone"
-                value={form.telefone}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    telefone: e.target.value,
-                  })
-                }
+                id="contato"
+                value={form.contato}
+                onChange={(e) => setForm({ ...form, contato: e.target.value })}
               />
             </div>
-
-            {/* E-mail */}
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="email">
-                E-mail
-              </Label>
-
-              <Input
-                id="email"
-                type="email"
-                value={form.email}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    email: e.target.value,
-                  })
-                }
-              />
-            </div>
-
           </div>
 
           <DialogFooter>
-
             <Button
               variant="outline"
               onClick={() => {
@@ -409,16 +256,10 @@ function Guests() {
             >
               Cancelar
             </Button>
-
-            <Button onClick={salvar}>
-              Salvar
-            </Button>
-
+            <Button onClick={salvar}>Salvar</Button>
           </DialogFooter>
-
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
