@@ -55,7 +55,7 @@ function Header() {
       icon: BedDouble,
     },
     {
-      to: "/cliente/reservas",
+      to: "/myBookin",
       label: "Minhas reservas",
       icon: CalendarRange,
     },

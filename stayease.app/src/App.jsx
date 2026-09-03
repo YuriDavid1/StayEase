@@ -11,6 +11,12 @@ import SchedulingAdm from "./pages/adm/schedulingAdm"
 
 {/*usuario*/}
 import UserPage from "./pages/user/userPage";
+import RoomDetail from "./pages/user/roomDetail.$id"
+import BookinForm from "./pages/user/bookinForm"
+import MyBookin from "./pages/user/myBookin"
+import BookinDetail from "./pages/user/bookinDetail.$id"
+import Checkout from "./pages/user/checkout.$id"
+import Checkin from "./pages/user/checkin.$id"
 
 
 import Layout from "./components/layout/layout";
@@ -39,7 +45,13 @@ function App() {
 
 
           {/*Usuario */}
-          <Route path="/user" element={<UserPage />} />
+          <Route path="/user" element={<UserPage />} /> 
+          <Route path="/user/roomDetail/:id" element={<RoomDetail />} />
+          <Route path="/bookin" element={<BookinForm />} /> 
+          <Route path="/myBookin" element={<MyBookin />} />
+          <Route path="/user/bookinDetail/:id" element={<BookinDetail />} />
+          <Route path="/user/checkout/:id" element={<Checkout />} />
+          <Route path="/user/checkin/:id" element={<Checkin/>} />
 
         </Route>
 
