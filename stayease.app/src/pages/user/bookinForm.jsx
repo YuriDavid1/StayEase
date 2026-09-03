@@ -432,7 +432,7 @@ function BookinForm() {
               variant="outline"
               className="w-full"
               onClick={() =>
-                navigate("/cliente/buscar")
+                navigate("/roomList")
               }
             >
               Escolher outro quarto

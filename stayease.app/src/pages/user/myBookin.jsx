@@ -173,7 +173,7 @@ function MinhasReservas() {
 
         <Button
           onClick={() =>
-            navigate("/cliente/buscar")
+            navigate("/roomList")
           }
         >
           <CalendarPlus className="h-4 w-4" />
