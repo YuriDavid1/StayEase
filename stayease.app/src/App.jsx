@@ -17,7 +17,7 @@ import MyBookin from "./pages/user/myBookin"
 import BookinDetail from "./pages/user/bookinDetail.$id"
 import Checkout from "./pages/user/checkout.$id"
 import Checkin from "./pages/user/checkin.$id"
-
+import RoomList from "./pages/user/roomList"
 
 import Layout from "./components/layout/layout";
 
@@ -52,6 +52,7 @@ function App() {
           <Route path="/user/bookinDetail/:id" element={<BookinDetail />} />
           <Route path="/user/checkout/:id" element={<Checkout />} />
           <Route path="/user/checkin/:id" element={<Checkin/>} />
+          <Route path="/roomList" element={<RoomList />} />
 
         </Route>
 

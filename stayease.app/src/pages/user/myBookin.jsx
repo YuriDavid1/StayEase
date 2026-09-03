@@ -11,10 +11,7 @@ import {
 } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 
-// ==============================
-// MOCK DOS QUARTOS
-// ==============================
-
+//mock de quartos
 const quartos = [
   {
     id: "q1",
@@ -66,10 +63,8 @@ const quartos = [
   },
 ];
 
-// ==============================
-// MOCK DAS RESERVAS
-// ==============================
 
+//mock de reservas
 const minhasReservas = [
   {
     id: "r1",
@@ -86,10 +81,6 @@ const minhasReservas = [
     status: "Confirmada",
   },
 ];
-
-// ==============================
-// FUNÇÕES AUXILIARES
-// ==============================
 
 function moeda(valor) {
   return valor.toLocaleString("pt-BR", {
@@ -133,10 +124,6 @@ function quartoPorId(id) {
   );
 }
 
-// ==============================
-// FILTROS
-// ==============================
-
 const filtros = [
   "Todas",
   "Confirmada",
@@ -144,10 +131,6 @@ const filtros = [
   "Finalizada",
   "Cancelada",
 ];
-
-// ==============================
-// COMPONENTE
-// ==============================
 
 function MinhasReservas() {
   const navigate = useNavigate();
@@ -171,7 +154,7 @@ function MinhasReservas() {
   return (
     <div className="space-y-8">
 
-      {/* CABEÇALHO */}
+      {/* Cabeçalho */}
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium uppercase tracking-widest text-oceano">
@@ -198,7 +181,7 @@ function MinhasReservas() {
         </Button>
       </section>
 
-      {/* FILTROS */}
+      {/* Filtros */}
       <div className="flex flex-wrap gap-2">
         {filtros.map((item) => (
           <Button
@@ -218,7 +201,7 @@ function MinhasReservas() {
         ))}
       </div>
 
-      {/* LISTA */}
+      {/* Lista */}
       {lista.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -309,7 +292,7 @@ function MinhasReservas() {
 
                   </div>
 
-                  {/* BOTÃO DE DETALHES */}
+                  {/* Detalhes */}
                   <Button
                     variant="outline"
                     className="mt-5 w-full"

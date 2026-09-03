@@ -101,13 +101,10 @@ function ClienteDashboard() {
     .filter((reserva) => reserva.status === "Confirmada")
     .sort((a, b) => a.entrada.localeCompare(b.entrada))[0];
 
-  // Quartos livres utilizados no resumo
   const livres = quartos.filter(
     (quarto) => quarto.status === "Livre"
   );
 
-  // Quartos que podem ser apresentados ao cliente.
-  // Quartos em limpeza pendente nunca são exibidos.
   const quartosDisponiveisParaCliente = quartos.filter(
     (quarto) => quarto.status !== "Limpeza Pendente"
   );

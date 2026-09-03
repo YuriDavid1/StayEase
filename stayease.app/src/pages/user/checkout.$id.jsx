@@ -63,10 +63,7 @@ const quartos = [
   },
 ];
 
-// ==============================
-// MOCK DAS RESERVAS
-// ==============================
-
+//Mock reservas
 const reservasIniciais = [
   {
     id: "r1",
@@ -87,10 +84,6 @@ const reservasIniciais = [
     checkoutEm: null,
   },
 ];
-
-// ==============================
-// FUNÇÕES AUXILIARES
-// ==============================
 
 function moeda(valor) {
   return valor.toLocaleString("pt-BR", {
@@ -140,10 +133,6 @@ function quartoPorId(id) {
   );
 }
 
-// ==============================
-// COMPONENTE PRINCIPAL
-// ==============================
-
 function CheckoutCliente() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -155,10 +144,6 @@ function CheckoutCliente() {
   const reserva = reservas.find(
     (r) => r.id === id
   );
-
-  // ==============================
-  // RESERVA NÃO ENCONTRADA
-  // ==============================
 
   if (!reserva) {
     return (
@@ -202,10 +187,6 @@ function CheckoutCliente() {
   const disponivel =
     reserva.status === "Hospedado";
 
-  // ==============================
-  // FINALIZAR CHECK-OUT
-  // ==============================
-
   function finalizarCheckout() {
     if (!disponivel) {
       return;
@@ -236,7 +217,7 @@ function CheckoutCliente() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
 
-      {/* VOLTAR PARA DETALHES */}
+      {/* Retorna para detalhes */}
       <Button
         variant="ghost"
         size="sm"
@@ -251,7 +232,7 @@ function CheckoutCliente() {
         Detalhes da reserva
       </Button>
 
-      {/* CABEÇALHO */}
+      {/* Cabeçalho */}
       <section>
         <p className="text-sm font-medium uppercase tracking-widest text-oceano">
           Área do hóspede
@@ -262,7 +243,7 @@ function CheckoutCliente() {
         </h1>
       </section>
 
-      {/* EXTRATO */}
+      {/* Extrato */}
       <Card className="border-border/70">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">
@@ -274,7 +255,7 @@ function CheckoutCliente() {
 
         <CardContent className="space-y-3 text-sm">
 
-          {/* DIÁRIAS */}
+          {/* Diárias */}
           <Linha
             rotulo={`Diárias (${n} x ${moeda(
               diaria
@@ -282,13 +263,13 @@ function CheckoutCliente() {
             valor={moeda(diaria * n)}
           />
 
-          {/* TAXA */}
+          {/* Taxa */}
           <Linha
             rotulo="Taxa de serviço (5%)"
             valor={moeda(taxa)}
           />
 
-          {/* TOTAL */}
+          {/* Total */}
           <div className="flex items-center justify-between border-t border-border/70 pt-3">
             <span className="font-medium text-foreground">
               Total
@@ -299,7 +280,7 @@ function CheckoutCliente() {
             </span>
           </div>
 
-          {/* PERÍODO */}
+          {/* Período */}
           <p className="text-muted-foreground">
             Período:{" "}
             {dataBR(reserva.entrada)}
@@ -312,7 +293,7 @@ function CheckoutCliente() {
             )}
           </p>
 
-          {/* BOTÃO CHECK-OUT */}
+          {/* Checkout */}
           <Button
             className="w-full"
             disabled={!disponivel}

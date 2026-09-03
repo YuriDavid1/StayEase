@@ -50,8 +50,8 @@ function Header() {
       icon: Anchor,
     },
     {
-      to: "/cliente/buscar",
-      label: "Disponibilidade",
+      to: "/roomList",
+      label: "Buscar",
       icon: BedDouble,
     },
     {

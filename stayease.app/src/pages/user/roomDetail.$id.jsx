@@ -118,10 +118,6 @@ function DetalhesQuarto() {
     );
   }
 
-  /*
-   * O cliente só pode realizar uma reserva
-   * quando o quarto estiver Livre.
-   */
   const disponivel = quarto.status === "Livre";
 
   const valorEstimado = quarto.diaria * diarias;
@@ -136,13 +132,6 @@ function DetalhesQuarto() {
     );
   };
 
-  /*
-   * A nova tela de reserva recebe:
-   * - o ID do quarto
-   * - a quantidade de diárias
-   *
-   * As datas não são mais escolhidas pelo cliente.
-   */
   const realizarAgendamento = () => {
     if (!disponivel) {
       return;
