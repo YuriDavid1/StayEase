@@ -49,3 +49,11 @@ export async function finishCleaning(roomId, room) {
 
     await api.put(`/rooms/${roomId}`, payload);
 }
+
+export async function fetchRoomById(roomId) {
+    const rooms = await fetchRooms();
+
+    return rooms.find(
+        (room) => String(room.id) === String(roomId)
+    ) ?? null;
+}

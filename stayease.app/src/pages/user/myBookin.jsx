@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,76 +11,15 @@ import {
 } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 
-//mock de quartos
-const quartos = [
-  {
-    id: "q1",
-    numero: "101",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Livre",
-  },
-  {
-    id: "q2",
-    numero: "102",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Ocupado",
-  },
-  {
-    id: "q3",
-    numero: "201",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Limpeza Pendente",
-  },
-  {
-    id: "q4",
-    numero: "202",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Livre",
-  },
-  {
-    id: "q5",
-    numero: "301",
-    tipo: "Suíte",
-    capacidade: 3,
-    diaria: 420,
-    status: "Livre",
-  },
-  {
-    id: "q6",
-    numero: "302",
-    tipo: "Suíte",
-    capacidade: 4,
-    diaria: 480,
-    status: "Ocupado",
-  },
-];
+import {
+  fetchReservationsByGuest,
+} from "../../services/reservationsService";
 
+import { fetchRoomById } from "../../services/roomsService";
 
-//mock de reservas
-const minhasReservas = [
-  {
-    id: "r1",
-    quartoId: "q2",
-    entrada: "2026-09-01",
-    saida: "2026-09-05",
-    status: "Hospedado",
-  },
-  {
-    id: "r2",
-    quartoId: "q4",
-    entrada: "2026-09-10",
-    saida: "2026-09-13",
-    status: "Confirmada",
-  },
-];
+import { fetchCurrentGuest } from "../../services/guestsService";
+
+import { getRoomDailyRate } from "../../services/roomDailyRatesStorage";
 
 function moeda(valor) {
   return valor.toLocaleString("pt-BR", {
@@ -92,8 +31,10 @@ function moeda(valor) {
 function dataBR(data) {
   if (!data) return "—";
 
+  const dataNormalizada = String(data).slice(0, 10);
+
   return new Date(
-    `${data}T00:00:00`
+    `${dataNormalizada}T00:00:00`
   ).toLocaleDateString("pt-BR");
 }
 
@@ -118,12 +59,6 @@ function noites(entrada, saida) {
   );
 }
 
-function quartoPorId(id) {
-  return quartos.find(
-    (quarto) => quarto.id === id
-  );
-}
-
 const filtros = [
   "Todas",
   "Confirmada",
@@ -136,8 +71,60 @@ function MinhasReservas() {
   const navigate = useNavigate();
 
   const [filtro, setFiltro] = useState("Todas");
+  const [reservas, setReservas] = useState([]);
+  const [quartos, setQuartos] = useState({});
+  const [carregando, setCarregando] = useState(true);
 
-  const lista = minhasReservas
+  useEffect(() => {
+    async function carregarDados() {
+      try {
+        setCarregando(true);
+
+        const hospede = await fetchCurrentGuest();
+
+        if (!hospede) {
+          setReservas([]);
+          return;
+        }
+
+        const reservasApi =
+          await fetchReservationsByGuest(hospede.id);
+
+        setReservas(reservasApi);
+
+        const quartosCarregados = {};
+
+        await Promise.all(
+          reservasApi.map(async (reserva) => {
+            if (!reserva.roomId) return;
+
+            const quarto = await fetchRoomById(
+              reserva.roomId
+            );
+
+            if (quarto) {
+              quartosCarregados[
+                reserva.roomId
+              ] = quarto;
+            }
+          })
+        );
+
+        setQuartos(quartosCarregados);
+      } catch (error) {
+        console.error(
+          "Erro ao carregar reservas:",
+          error
+        );
+      } finally {
+        setCarregando(false);
+      }
+    }
+
+    carregarDados();
+  }, []);
+
+  const lista = reservas
     .filter((reserva) => {
       if (filtro === "Todas") {
         return true;
@@ -150,6 +137,16 @@ function MinhasReservas() {
         new Date(a.entrada) -
         new Date(b.entrada)
     );
+
+  if (carregando) {
+    return (
+      <div className="space-y-4">
+        <h1 className="font-display text-2xl font-semibold">
+          Carregando reservas...
+        </h1>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -213,19 +210,43 @@ function MinhasReservas() {
       ) : (
         <div className="grid gap-4">
           {lista.map((reserva) => {
-            const quarto = quartoPorId(
-              reserva.quartoId
-            );
+            const quarto =
+              quartos[reserva.roomId];
 
-            const quantidadeNoites =
-              noites(
-                reserva.entrada,
-                reserva.saida
-              );
+const entrada =
+  reserva.entrada ||
+  reserva.scheduledCheckIn ||
+  "";
 
-            const valorTotal =
-              (quarto?.diaria ?? 0) *
-              quantidadeNoites;
+const saida =
+  reserva.saida ||
+  reserva.scheduledCheckOut ||
+  "";
+
+const quantidadeNoites =
+  noites(entrada, saida);
+
+const diariaSalva = getRoomDailyRate(reserva.roomId);
+
+const diaria = Number.isFinite(Number(quarto?.diaria))
+  ? Number(quarto.diaria)
+  : Number.isFinite(Number(diariaSalva))
+    ? Number(diariaSalva)
+    : 0;
+
+
+const valorTotal =
+  diaria * quantidadeNoites;
+
+console.log("DEBUG MYBOOKIN:", {
+  reserva,
+  quarto,
+  entrada,
+  saida,
+  quantidadeNoites,
+  diaria,
+  valorTotal: diaria * quantidadeNoites,
+});
 
             return (
               <Card
@@ -263,7 +284,7 @@ function MinhasReservas() {
 
                       <span className="text-sm font-medium">
                         {dataBR(
-                          reserva.entrada
+                          entrada
                         )}
                       </span>
                     </div>
@@ -275,7 +296,7 @@ function MinhasReservas() {
 
                       <span className="text-sm font-medium">
                         {dataBR(
-                          reserva.saida
+                          saida
                         )}
                       </span>
                     </div>

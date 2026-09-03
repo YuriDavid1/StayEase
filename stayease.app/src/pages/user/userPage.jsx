@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { BedDouble } from "lucide-react";
 
 import { Button } from "../../components/ui/button";
@@ -9,71 +10,9 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 
-const hospede = {
-  id: "h1",
-  nome: "Lucas",
-};
-
-const quartos = [
-  {
-    id: "q1",
-    numero: "101",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Livre",
-  },
-  {
-    id: "q2",
-    numero: "102",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Ocupado",
-  },
-  {
-    id: "q3",
-    numero: "201",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Limpeza Pendente",
-  },
-  {
-    id: "q4",
-    numero: "202",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Livre",
-  },
-  {
-    id: "q5",
-    numero: "301",
-    tipo: "Suíte",
-    capacidade: 3,
-    diaria: 420,
-    status: "Livre",
-  },
-  {
-    id: "q6",
-    numero: "302",
-    tipo: "Suíte",
-    capacidade: 4,
-    diaria: 480,
-    status: "Ocupado",
-  },
-];
-
-const minhasReservas = [
-  {
-    id: "r1",
-    quartoId: "q2",
-    status: "Hospedado",
-    entrada: "2026-09-01",
-    saida: "2026-09-05",
-  },
-];
+import { fetchRooms } from "../../services/roomsService";
+import { fetchCurrentGuest } from "../../services/guestsService";
+import { fetchReservationsByGuest } from "../../services/reservationsService";
 
 const moeda = (valor) => {
   return Number(valor).toLocaleString("pt-BR", {
@@ -88,11 +27,37 @@ const dataBR = (data) => {
   return new Date(`${data}T00:00:00`).toLocaleDateString("pt-BR");
 };
 
-const quartoPorId = (id) => {
-  return quartos.find((quarto) => quarto.id === id);
-};
-
 function ClienteDashboard() {
+  const [hospede, setHospede] = useState(null);
+  const [quartos, setQuartos] = useState([]);
+  const [minhasReservas, setMinhasReservas] = useState([]);
+
+  useEffect(() => {
+    async function carregarDados() {
+      try {
+        const [quartosApi, hospedeApi] = await Promise.all([
+          fetchRooms(),
+          fetchCurrentGuest(),
+        ]);
+
+        setQuartos(quartosApi);
+        setHospede(hospedeApi);
+
+        if (hospedeApi) {
+          const reservasApi = await fetchReservationsByGuest(
+            hospedeApi.id
+          );
+
+          setMinhasReservas(reservasApi);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados do hóspede:", error);
+      }
+    }
+
+    carregarDados();
+  }, []);
+
   const hospedado = minhasReservas.find(
     (reserva) => reserva.status === "Hospedado"
   );
@@ -108,6 +73,12 @@ function ClienteDashboard() {
   const quartosDisponiveisParaCliente = quartos.filter(
     (quarto) => quarto.status !== "Limpeza Pendente"
   );
+
+  const quartoPorId = (id) => {
+    return quartos.find(
+      (quarto) => String(quarto.id) === String(id)
+    );
+  };
 
   const navegar = (url) => {
     window.location.href = url;
@@ -142,7 +113,8 @@ function ClienteDashboard() {
                 <p className="text-foreground">
                   Você está hospedado no quarto{" "}
                   <strong>
-                    {quartoPorId(hospedado.quartoId)?.numero}
+                    {quartoPorId(hospedado.roomId)?.numero ??
+                      hospedado.roomNumber}
                   </strong>{" "}
                   até {dataBR(hospedado.saida)}.
                 </p>
@@ -151,7 +123,7 @@ function ClienteDashboard() {
                   size="sm"
                   variant="outline"
                   onClick={() =>
-                    navegar(`/cliente/reservas/${hospedado.id}`)
+                    navegar(`/user/bookinDetail/${hospedado.id}`)
                   }
                 >
                   Ver detalhes
@@ -162,7 +134,8 @@ function ClienteDashboard() {
                 <p className="text-foreground">
                   Reserva confirmada no quarto{" "}
                   <strong>
-                    {quartoPorId(proxima.quartoId)?.numero}
+                    {quartoPorId(proxima.roomId)?.numero ??
+                      proxima.roomNumber}
                   </strong>{" "}
                   de {dataBR(proxima.entrada)} a{" "}
                   {dataBR(proxima.saida)}.
@@ -172,7 +145,7 @@ function ClienteDashboard() {
                   size="sm"
                   variant="outline"
                   onClick={() =>
-                    navegar(`/cliente/reservas/${proxima.id}`)
+                    navegar(`/user/bookinDetail/${proxima.id}`)
                   }
                 >
                   Ver detalhes

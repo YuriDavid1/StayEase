@@ -31,3 +31,17 @@ export async function fetchGuestReservations(guestId) {
     const response = await api.get(`/reservations/guest/${guestId}`);
     return Array.isArray(response.data) ? response.data : [];
 }
+
+export async function fetchGuestById(guestId) {
+    const guests = await fetchGuests();
+
+    return guests.find(
+        (guest) => String(guest.id) === String(guestId)
+    ) ?? null;
+}
+
+export async function fetchCurrentGuest() {
+    const guests = await fetchGuests();
+
+    return guests[0] ?? null;
+}

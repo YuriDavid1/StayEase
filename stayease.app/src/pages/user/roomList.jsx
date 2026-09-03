@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BedDouble, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,58 +11,7 @@ import {
 } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-
-// Dados mockados
-const quartos = [
-  {
-    id: "q1",
-    numero: "101",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Livre",
-  },
-  {
-    id: "q2",
-    numero: "102",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Ocupado",
-  },
-  {
-    id: "q3",
-    numero: "201",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Limpeza Pendente",
-  },
-  {
-    id: "q4",
-    numero: "202",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Livre",
-  },
-  {
-    id: "q5",
-    numero: "301",
-    tipo: "Suíte",
-    capacidade: 3,
-    diaria: 420,
-    status: "Livre",
-  },
-  {
-    id: "q6",
-    numero: "302",
-    tipo: "Suíte",
-    capacidade: 4,
-    diaria: 480,
-    status: "Ocupado",
-  },
-];
+import { fetchRooms } from "../../services/roomsService";
 
 function hojeISO() {
   const hoje = new Date();
@@ -119,6 +68,23 @@ function BuscarDisponibilidade() {
   const [saida, setSaida] = useState(somarDias(dataAtual, 2));
   const [pessoas, setPessoas] = useState(2);
   const [buscou, setBuscou] = useState(false);
+  const [quartos, setQuartos] = useState([]);
+  const [carregandoQuartos, setCarregandoQuartos] = useState(true);
+
+  useEffect(() => {
+    async function carregarQuartos() {
+      try {
+        const quartosApi = await fetchRooms();
+        setQuartos(quartosApi);
+      } catch (error) {
+        console.error("Erro ao carregar quartos:", error);
+      } finally {
+        setCarregandoQuartos(false);
+      }
+    }
+
+    carregarQuartos();
+  }, []);
 
   const periodoValido = noites(entrada, saida) > 0;
 
@@ -126,7 +92,8 @@ function BuscarDisponibilidade() {
     ? quartos.filter(
         (quarto) =>
           quarto.status === "Livre" &&
-          quarto.capacidade >= pessoas
+          quarto.capacidade >= pessoas &&
+          quarto.diaria !== null
       )
     : [];
 

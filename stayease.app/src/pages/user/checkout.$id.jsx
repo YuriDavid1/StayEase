@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -11,79 +11,14 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 
-//Mock de quartos
-const quartos = [
-  {
-    id: "q1",
-    numero: "101",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Livre",
-  },
-  {
-    id: "q2",
-    numero: "102",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Ocupado",
-  },
-  {
-    id: "q3",
-    numero: "201",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Limpeza Pendente",
-  },
-  {
-    id: "q4",
-    numero: "202",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Livre",
-  },
-  {
-    id: "q5",
-    numero: "301",
-    tipo: "Suíte",
-    capacidade: 3,
-    diaria: 420,
-    status: "Livre",
-  },
-  {
-    id: "q6",
-    numero: "302",
-    tipo: "Suíte",
-    capacidade: 4,
-    diaria: 480,
-    status: "Ocupado",
-  },
-];
+import {
+  fetchReservationById,
+  checkOutReservation,
+} from "../../services/reservationsService";
 
-//Mock reservas
-const reservasIniciais = [
-  {
-    id: "r1",
-    quartoId: "q2",
-    entrada: "2026-09-01",
-    saida: "2026-09-05",
-    status: "Hospedado",
-    checkinEm: "2026-09-01T14:32:00",
-    checkoutEm: null,
-  },
-  {
-    id: "r2",
-    quartoId: "q4",
-    entrada: "2026-09-10",
-    saida: "2026-09-13",
-    status: "Confirmada",
-    checkinEm: null,
-    checkoutEm: null,
-  },
-];
+import { fetchRoomById } from "../../services/roomsService";
+
+import { getRoomDailyRate } from "../../services/roomDailyRatesStorage";
 
 function moeda(valor) {
   return valor.toLocaleString("pt-BR", {
@@ -95,9 +30,9 @@ function moeda(valor) {
 function dataBR(data) {
   if (!data) return "—";
 
-  return new Date(
-    `${data}T00:00:00`
-  ).toLocaleDateString("pt-BR");
+  return new Date(`${data}T00:00:00`).toLocaleDateString(
+    "pt-BR"
+  );
 }
 
 function dataHoraBR(data) {
@@ -109,13 +44,8 @@ function dataHoraBR(data) {
 function noites(entrada, saida) {
   if (!entrada || !saida) return 0;
 
-  const inicio = new Date(
-    `${entrada}T00:00:00`
-  );
-
-  const fim = new Date(
-    `${saida}T00:00:00`
-  );
+  const inicio = new Date(`${entrada}T00:00:00`);
+  const fim = new Date(`${saida}T00:00:00`);
 
   const diferenca = fim - inicio;
 
@@ -127,23 +57,62 @@ function noites(entrada, saida) {
   );
 }
 
-function quartoPorId(id) {
-  return quartos.find(
-    (quarto) => quarto.id === id
-  );
-}
-
 function CheckoutCliente() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [reservas, setReservas] = useState(
-    reservasIniciais
-  );
+  const [reserva, setReserva] = useState(null);
+  const [quarto, setQuarto] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [processando, setProcessando] = useState(false);
 
-  const reserva = reservas.find(
-    (r) => r.id === id
-  );
+  useEffect(() => {
+    async function carregarDados() {
+      try {
+        setCarregando(true);
+
+        const reservaApi = await fetchReservationById(id);
+
+        if (!reservaApi) {
+          setReserva(null);
+          return;
+        }
+
+        setReserva(reservaApi);
+
+        const quartoApi = await fetchRoomById(
+          reservaApi.roomId
+        );
+
+        setQuarto(quartoApi);
+      } catch (error) {
+        console.error(
+          "Erro ao carregar reserva:",
+          error
+        );
+
+        toast.error(
+          "Não foi possível carregar a reserva."
+        );
+
+        setReserva(null);
+      } finally {
+        setCarregando(false);
+      }
+    }
+
+    carregarDados();
+  }, [id]);
+
+  if (carregando) {
+    return (
+      <div className="space-y-4">
+        <h1 className="font-display text-2xl font-semibold">
+          Carregando reserva...
+        </h1>
+      </div>
+    );
+  }
 
   if (!reserva) {
     return (
@@ -155,7 +124,7 @@ function CheckoutCliente() {
         <Button
           variant="outline"
           onClick={() =>
-            navigate("/user/reservas")
+            navigate("/myBookin")
           }
         >
           Voltar às minhas reservas
@@ -164,16 +133,15 @@ function CheckoutCliente() {
     );
   }
 
-  const quarto = quartoPorId(
-    reserva.quartoId
-  );
-
   const n = noites(
     reserva.entrada,
     reserva.saida
   );
 
-  const diaria = quarto?.diaria ?? 0;
+  const diaria =
+    quarto?.diaria ??
+    getRoomDailyRate(reserva.roomId) ??
+    0;
 
   // Taxa de serviço de 5%
   const taxa = Math.round(
@@ -187,31 +155,35 @@ function CheckoutCliente() {
   const disponivel =
     reserva.status === "Hospedado";
 
-  function finalizarCheckout() {
-    if (!disponivel) {
+  async function finalizarCheckout() {
+    if (!disponivel || processando) {
       return;
     }
 
-    setReservas((reservasAtuais) =>
-      reservasAtuais.map((r) =>
-        r.id === reserva.id
-          ? {
-              ...r,
-              status: "Finalizada",
-              checkoutEm:
-                new Date().toISOString(),
-            }
-          : r
-      )
-    );
+    try {
+      setProcessando(true);
 
-    toast.success(
-      "Check-out concluído. Obrigado pela visita!"
-    );
+      await checkOutReservation(reserva.id);
 
-    navigate(
-      `/user/bookinDetail/${reserva.id}`
-    );
+      toast.success(
+        "Check-out concluído. Obrigado pela visita!"
+      );
+
+      navigate(
+        `/user/bookinDetail/${reserva.id}`
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao realizar check-out:",
+        error
+      );
+
+      toast.error(
+        "Não foi possível realizar o check-out."
+      );
+    } finally {
+      setProcessando(false);
+    }
   }
 
   return (
@@ -296,11 +268,13 @@ function CheckoutCliente() {
           {/* Checkout */}
           <Button
             className="w-full"
-            disabled={!disponivel}
+            disabled={!disponivel || processando}
             onClick={finalizarCheckout}
           >
             <LogOut className="h-4 w-4" />
-            Finalizar check-out
+            {processando
+              ? "Realizando check-out..."
+              : "Finalizar check-out"}
           </Button>
 
         </CardContent>

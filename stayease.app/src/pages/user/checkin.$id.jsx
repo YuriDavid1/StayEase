@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, LogIn } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -13,85 +13,11 @@ import {
 import { Checkbox } from "../../components/ui/checkbox";
 import { Label } from "../../components/ui/label";
 import { Badge } from "../../components/ui/badge";
-
-// Dados mockados
-const quartos = [
-  {
-    id: "q1",
-    numero: "101",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Livre",
-  },
-  {
-    id: "q2",
-    numero: "102",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Ocupado",
-  },
-  {
-    id: "q3",
-    numero: "201",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Limpeza Pendente",
-  },
-  {
-    id: "q4",
-    numero: "202",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Livre",
-  },
-  {
-    id: "q5",
-    numero: "301",
-    tipo: "Suíte",
-    capacidade: 3,
-    diaria: 420,
-    status: "Livre",
-  },
-  {
-    id: "q6",
-    numero: "302",
-    tipo: "Suíte",
-    capacidade: 4,
-    diaria: 480,
-    status: "Ocupado",
-  },
-];
-
-const hospedes = [
-  {
-    id: "h1",
-    nome: "Lucas",
-  },
-];
-
-// Reservas mockadas
-const reservasIniciais = [
-  {
-    id: "r1",
-    hospedeIds: ["h1"],
-    quartoId: "q2",
-    entrada: "2026-09-01",
-    saida: "2026-09-05",
-    status: "Confirmada",
-  },
-  {
-    id: "r2",
-    hospedeIds: ["h1"],
-    quartoId: "q4",
-    entrada: "2026-09-10",
-    saida: "2026-09-13",
-    status: "Confirmada",
-  },
-];
+import {
+  fetchReservationById,
+  checkInReservation,
+} from "../../services/reservationsService";
+import { fetchRoomById } from "../../services/roomsService";
 
 function moeda(valor) {
   return valor.toLocaleString("pt-BR", {
@@ -118,22 +44,46 @@ function noites(entrada, saida) {
   );
 }
 
-function quartoPorId(id) {
-  return quartos.find((quarto) => quarto.id === id);
-}
-
-function hospedePorId(id) {
-  return hospedes.find((hospede) => hospede.id === id);
-}
-
 function CheckinCliente() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [reservas, setReservas] = useState(reservasIniciais);
+  const [reserva, setReserva] = useState(null);
+  const [quarto, setQuarto] = useState(null);
+  const [carregando, setCarregando] = useState(true);
   const [aceite, setAceite] = useState(false);
+  const [processando, setProcessando] = useState(false);
 
-  const reserva = reservas.find((r) => r.id === id);
+  useEffect(() => {
+    async function carregarReserva() {
+      try {
+        const reservaApi = await fetchReservationById(id);
+        setReserva(reservaApi);
+
+        if (reservaApi?.roomId) {
+          const quartoApi = await fetchRoomById(reservaApi.roomId);
+          setQuarto(quartoApi);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar reserva:", error);
+        setReserva(null);
+      } finally {
+        setCarregando(false);
+      }
+    }
+
+    carregarReserva();
+  }, [id]);
+
+  if (carregando) {
+    return (
+      <div className="space-y-4">
+        <h1 className="font-display text-2xl font-semibold">
+          Carregando reserva...
+        </h1>
+      </div>
+    );
+  }
 
   if (!reserva) {
     return (
@@ -144,7 +94,7 @@ function CheckinCliente() {
 
         <Button
           variant="outline"
-          onClick={() => navigate("/user/reservas")}
+          onClick={() => navigate("/myBookin")}
         >
           Voltar às minhas reservas
         </Button>
@@ -152,35 +102,30 @@ function CheckinCliente() {
     );
   }
 
-  const quarto = quartoPorId(reserva.quartoId);
-
   const jaFeito = reserva.status !== "Confirmada";
-
-  const confirmar = () => {
-    if (jaFeito) return;
-
-    setReservas((atual) =>
-      atual.map((item) =>
-        item.id === reserva.id
-          ? {
-              ...item,
-              status: "Hospedado",
-              checkinEm: new Date().toISOString(),
-            }
-          : item
-      )
-    );
-
-    toast.success(
-      `Check-in realizado no quarto ${quarto?.numero}. Boa estadia!`
-    );
-
-    navigate(`/user/bookinDetail/${reserva.id}`);
-  };
-
   const totalNoites = noites(reserva.entrada, reserva.saida);
-
   const valorTotal = (quarto?.diaria ?? 0) * totalNoites;
+
+  async function confirmar() {
+    if (jaFeito || processando) return;
+
+    try {
+      setProcessando(true);
+
+      await checkInReservation(reserva.id);
+
+      toast.success(
+        `Check-in realizado no quarto ${quarto?.numero ?? ""}. Boa estadia!`
+      );
+
+      navigate(`/user/bookinDetail/${reserva.id}`);
+    } catch (error) {
+      console.error("Erro ao realizar check-in:", error);
+      toast.error("Não foi possível realizar o check-in.");
+    } finally {
+      setProcessando(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -208,7 +153,7 @@ function CheckinCliente() {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-base">
-              Quarto {quarto?.numero} — {quarto?.tipo}
+              Quarto {quarto?.numero ?? "—"} — {quarto?.tipo ?? "—"}
             </CardTitle>
 
             {quarto && (
@@ -231,12 +176,7 @@ function CheckinCliente() {
             </span>
 
             <span className="text-foreground">
-              {reserva.hospedeIds
-                .map(
-                  (hospedeId) =>
-                    hospedePorId(hospedeId)?.nome ?? "—"
-                )
-                .join(", ")}
+              {reserva.guestName || "—"}
             </span>
           </div>
 
@@ -267,11 +207,11 @@ function CheckinCliente() {
 
           <Button
             className="w-full"
-            disabled={jaFeito || !aceite}
+            disabled={jaFeito || !aceite || processando}
             onClick={confirmar}
           >
             <LogIn className="h-4 w-4" />
-            Confirmar check-in
+            {processando ? "Realizando check-in..." : "Confirmar check-in"}
           </Button>
         </CardContent>
       </Card>
