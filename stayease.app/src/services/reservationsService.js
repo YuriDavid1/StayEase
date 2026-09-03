@@ -33,10 +33,24 @@ export async function cancelReservation(reservationId) {
 
 export async function fetchReservationsByRoom(roomId) {
     const response = await api.get(`/reservations/room/${roomId}`);
-    return Array.isArray(response.data) ? response.data : [];
+    const reservations = Array.isArray(response.data) ? response.data : [];
+
+    return reservations.map((reservation) =>
+        normalizeReservationFromApi(reservation)
+    );
 }
 
 export async function fetchReservationsByGuest(guestId) {
     const response = await api.get(`/reservations/guest/${guestId}`);
-    return Array.isArray(response.data) ? response.data : [];
+    const reservations = Array.isArray(response.data) ? response.data : [];
+
+    return reservations.map((reservation) =>
+        normalizeReservationFromApi(reservation)
+    );
+}
+
+export async function fetchReservationById(reservationId) {
+    const response = await api.get(`/reservations/${reservationId}`);
+
+    return normalizeReservationFromApi(response.data);
 }

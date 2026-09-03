@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CalendarPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "../../components/ui/button";
+import { fetchRooms } from "../../services/roomsService";
+import { fetchCurrentGuest } from "../../services/guestsService";
+import { createReservation } from "../../services/reservationsService";
 
 import {
   Card,
@@ -23,78 +26,11 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 
-//mocks
-const quartos = [
-  {
-    id: "q1",
-    numero: "101",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Livre",
-  },
-  {
-    id: "q2",
-    numero: "102",
-    tipo: "Standard",
-    capacidade: 2,
-    diaria: 180,
-    status: "Ocupado",
-  },
-  {
-    id: "q3",
-    numero: "201",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Limpeza Pendente",
-  },
-  {
-    id: "q4",
-    numero: "202",
-    tipo: "Luxo",
-    capacidade: 4,
-    diaria: 320,
-    status: "Livre",
-  },
-  {
-    id: "q5",
-    numero: "301",
-    tipo: "Suíte",
-    capacidade: 3,
-    diaria: 420,
-    status: "Livre",
-  },
-  {
-    id: "q6",
-    numero: "302",
-    tipo: "Suíte",
-    capacidade: 4,
-    diaria: 480,
-    status: "Ocupado",
-  },
-];
-
-const hospede = {
-  id: "h1",
-  nome: "Lucas",
-};
-
-const usuarioAtual = {
-  id: "u1",
-};
-
-const hospedeId = "h1";
-
 const moeda = (valor) => {
   return Number(valor).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
-};
-
-const novoId = (prefixo) => {
-  return `${prefixo}${Date.now()}`;
 };
 
 const hojeISO = () => {
@@ -120,13 +56,39 @@ function BookinForm() {
     quartoParametro ?? ""
   );
 
+  const [quartos, setQuartos] = useState([]);
+  const [hospede, setHospede] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [enviando, setEnviando] = useState(false);
+
   const [entrada, setEntrada] = useState("");
   const [saida, setSaida] = useState("");
 
   const [observacao, setObservacao] = useState("");
 
+  useEffect(() => {
+    async function carregarDados() {
+      try {
+        const [quartosApi, hospedeApi] = await Promise.all([
+          fetchRooms(),
+          fetchCurrentGuest(),
+        ]);
+
+        setQuartos(quartosApi);
+        setHospede(hospedeApi);
+      } catch (error) {
+        console.error("Erro ao carregar dados da reserva:", error);
+        toast.error("Não foi possível carregar os dados da reserva.");
+      } finally {
+        setCarregando(false);
+      }
+    }
+
+    carregarDados();
+  }, []);
+
   const quarto = quartos.find(
-    (q) => q.id === quartoId
+    (q) => String(q.id) === String(quartoId)
   );
 
   const quartosDisponiveis = quartos.filter(
@@ -173,10 +135,10 @@ function BookinForm() {
     !saida ||
     diarias <= 0;
 
-  const confirmar = (e) => {
+  const confirmar = async (e) => {
     e.preventDefault();
 
-    if (!quarto || !hospedeId || !usuarioAtual) {
+    if (!quarto || !hospede?.id) {
       return;
     }
 
@@ -184,7 +146,6 @@ function BookinForm() {
       toast.error(
         "Este quarto não está disponível para reserva."
       );
-
       return;
     }
 
@@ -192,7 +153,6 @@ function BookinForm() {
       toast.error(
         "Informe as datas de check-in e check-out."
       );
-
       return;
     }
 
@@ -200,33 +160,41 @@ function BookinForm() {
       toast.error(
         "A data de check-out deve ser posterior à data de check-in."
       );
-
       return;
     }
 
-    const id = novoId("r");
+    try {
+      setEnviando(true);
 
-    const reserva = {
-      id,
-      hospedeIds: [hospedeId],
-      quartoId: quarto.id,
-      responsavelId: usuarioAtual.id,
-      entrada,
-      saida,
-      diarias,
-      valorTotal,
-      status: "Confirmada",
-      observacao,
-    };
+      const reserva = await createReservation({
+        roomId: quarto.id,
+        guestId: hospede.id,
+        entrada,
+        saida,
+      });
 
-    console.log("Reserva criada:", reserva);
+      toast.success(
+        `Reserva confirmada no quarto ${quarto.numero}.`
+      );
 
-    toast.success(
-      `Reserva confirmada no quarto ${quarto.numero}.`
-    );
-
-    navigate(`/cliente/reservas/${id}`);
+      navigate(`/user/bookinDetail/${reserva.id}`);
+    } catch (error) {
+      console.error("Erro ao criar reserva:", error);
+      toast.error("Não foi possível confirmar a reserva.");
+    } finally {
+      setEnviando(false);
+    }
   };
+
+  if (carregando) {
+    return (
+      <div className="space-y-8">
+        <p className="text-sm text-muted-foreground">
+          Carregando dados da reserva...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -279,7 +247,7 @@ function BookinForm() {
                   {quartosDisponiveis.map((q) => (
                     <SelectItem
                       key={q.id}
-                      value={q.id}
+                      value={String(q.id)}
                     >
                       {q.numero} — {q.tipo} (
                       {moeda(q.diaria)})
@@ -417,13 +385,11 @@ function BookinForm() {
             <Button
               type="submit"
               className="w-full"
-              disabled={invalido}
-              onClick={() =>
-                navigate("/myBookin")
-              }
+              disabled={invalido || enviando}
+
             >
               <CalendarPlus className="h-4 w-4" />
-              Confirmar reserva
+              {enviando ? "Confirmando..." : "Confirmar reserva"}
             </Button>
 
             {/* Escolher outro quarto */}

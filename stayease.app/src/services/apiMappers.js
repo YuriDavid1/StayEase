@@ -157,6 +157,7 @@ export function normalizeReservationFromApi(reservation) {
         roomId: reservation?.roomId ?? reservation?.room?.roomId ?? "",
         guestName: reservation?.guest?.name ?? "",
         roomNumber: reservation?.room?.number ?? "",
+        roomType: reservation?.room?.type ?? "",
         entrada: reservation?.scheduledCheckIn
             ? new Date(reservation.scheduledCheckIn).toISOString().slice(0, 10)
             : "",
