@@ -60,18 +60,19 @@ O StayEase automatiza esse processo permitindo:
 O projeto segue o padrão arquitetural **MVC (Model-View-Controller)**.
 
 ```
-src
-├── Backend
+StayEase
+├── StayEase.Api
 │   ├── Controllers
 │   ├── Models
 │   ├── Services
 │   └── Tests
 │
-└── Frontend
-    ├── Components
-    ├── Pages
-    ├── Services
-    └── Assets
+└── stayease.app
+   └── src
+        ├── Components
+        ├── Pages
+        ├── Services
+        └── Assets
 ```
 
 ---
@@ -113,21 +114,27 @@ cd StayEase
 ## Backend
 
 ```bash
-cd src/Backend
+Requisitos antes de rodar o backend:
+1. Criar um banco no PostgreSQL
+2. Copiar a Connection String
+3. Colar a String no DefaultConnection localizado em StayEase.Api/appsettings.json
 
-dotnet restore
+Aplicar as migrations:
+dotnet ef database update
 
-dotnet run
+Como rodar:
+cd StayEase.Api
+dotnet run   
 ```
 
 ## Frontend
 
 ```bash
-cd src/Frontend
+cd stayease.app
 
 npm install
 
-npm start
+npm run dev
 ```
 
 ---
