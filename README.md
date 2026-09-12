@@ -139,6 +139,55 @@ npm run dev
 
 ---
 
+# Testes
+
+O projeto utiliza **XUnit** para testes unitários, seguindo o padrão **AAA (Arrange, Act, Assert)**.
+
+Os testes utilizam o **Entity Framework Core InMemory**, permitindo executar os testes sem utilizar o banco de dados real.
+
+## Instalação e Execução
+
+Restaurar as dependências:
+
+```bash
+dotnet restore
+```
+
+Executar os testes:
+
+```bash
+dotnet test
+```
+
+Executar os testes com mais detalhes:
+
+```bash
+dotnet test --logger "console;verbosity=detailed"
+```
+
+## Funcionalidades Testadas
+
+Os testes abrangem as principais funcionalidades do backend:
+
+- Hóspedes;
+- Quartos;
+- Usuários;
+- Reservas;
+- Check-in;
+- Check-out;
+- Cancelamento de reservas;
+- Consultas e filtros.
+
+## Resultado Atual
+
+| Total | Sucesso | Falhas | Ignorados | Duração |
+|---|---|---|---|---|
+| 65 | 60 | 5 | 0 | 2,1s |
+
+Atualmente, **60 testes estão sendo executados com sucesso** e **5 testes ainda possuem falhas que estão sendo corrigidas**.
+
+--- 
+
 # Guia de Estilo
 
 ## Convenções de Nomenclatura
