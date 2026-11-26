@@ -10,9 +10,10 @@ import {
 } from "lucide-react";
 
 import { useUser } from "../../lib/useUser";
+import { FRONT_DESK_ROLES, ROLES, STAFF_ROLES } from "../../lib/authSession";
 
 function Header() {
-  const { perfil, logout } = useUser();
+  const { perfil, role, logout } = useUser();
   const navigate = useNavigate();
 
   const adminNav = [
@@ -20,26 +21,31 @@ function Header() {
       to: "/homeAdm",
       label: "Painel",
       icon: Anchor,
+      roles: STAFF_ROLES,
     },
     {
       to: "/usersAdm",
       label: "Usuários",
       icon: ShieldCheck,
+      roles: [ROLES.ADMIN],
     },
     {
       to: "/rooms",
       label: "Quartos",
       icon: BedDouble,
+      roles: [ROLES.ADMIN],
     },
     {
       to: "/guests",
       label: "Hóspedes",
       icon: Users,
+      roles: FRONT_DESK_ROLES,
     },
     {
       to: "/schedulingAdm",
       label: "Reservas",
       icon: CalendarRange,
+      roles: FRONT_DESK_ROLES,
     },
   ];
 
@@ -61,7 +67,9 @@ function Header() {
     },
   ];
 
-  const navItems = perfil === "admin" ? adminNav : usuarioNav;
+  const navItems = (perfil === "admin" ? adminNav : usuarioNav).filter(
+    (item) => !item.roles || item.roles.includes(role)
+  );
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-espuma/80 backdrop-blur">

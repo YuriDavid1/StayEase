@@ -120,6 +120,38 @@ dotnet restore
 dotnet run
 ```
 
+## Autenticação
+
+A API usa **JWT**. Todos os endpoints exigem um usuário logado, exceto `POST /api/auth/login`.
+
+Configuração (nunca commitar a chave nem a senha inicial):
+
+```bash
+cd StayEase.Api
+
+# Chave de assinatura dos tokens (mínimo 32 caracteres).
+# Em Development, se não for informada, uma chave temporária é gerada a cada execução.
+dotnet user-secrets set "Jwt:Key" "<uma-chave-aleatoria-longa>"
+
+# Primeiro administrador: criado na inicialização se ainda não existir nenhum.
+# Depois do primeiro login, remova a senha inicial.
+dotnet user-secrets set "Seed:AdminEmail" "admin@stayease.com"
+dotnet user-secrets set "Seed:AdminPassword" "<senha-inicial>"
+```
+
+Em produção use as variáveis de ambiente `Jwt__Key`, `Seed__AdminEmail` e `Seed__AdminPassword`.
+
+Usuários criados antes da autenticação não têm senha: um administrador deve definir uma nova senha para eles na tela de Usuários.
+
+| Perfil | Acesso |
+|---|---|
+| Administrador | Tudo, incluindo usuários e cadastro de quartos |
+| Recepção | Hóspedes, reservas, check-in e check-out |
+| Governança | Painel de quartos e conclusão de limpeza |
+| Hóspede | Área do hóspede (busca de quartos e reservas) |
+
+O login aceita no máximo 10 tentativas por minuto por IP (`Auth:LoginAttemptsPerMinute`).
+
 ## Frontend
 
 ```bash

@@ -1,9 +1,13 @@
-import { Anchor, ShieldCheck, User } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Anchor, LogIn } from "lucide-react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { useUser } from "../lib/useUser";
+import { homePathFor } from "../lib/authSession";
 
 import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 
 import {
   Card,
@@ -13,17 +17,38 @@ import {
 } from "../components/ui/card";
 
 function Login() {
-  const { login } = useUser();
+  const { login, isAuthenticated, role } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  function entrarComoAdmin() {
-    login("admin");
-    navigate("/homeAdm");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
+  const [enviando, setEnviando] = useState(false);
+
+  if (isAuthenticated) {
+    return <Navigate to={homePathFor(role)} replace />;
   }
 
-  function entrarComoUsuario() {
-    login("usuario");
-    navigate("/user");
+  async function entrar(event) {
+    event.preventDefault();
+    setErro("");
+
+    if (!email.trim() || !senha) {
+      setErro("Informe e-mail e senha.");
+      return;
+    }
+
+    setEnviando(true);
+    try {
+      const sessao = await login(email.trim(), senha);
+      navigate(location.state?.from ?? homePathFor(sessao.user.role), { replace: true });
+    } catch (error) {
+      setErro(error.message || "Não foi possível entrar.");
+      setSenha("");
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -40,31 +65,45 @@ function Login() {
           </CardTitle>
 
           <p className="text-sm text-muted-foreground">
-            Selecione o tipo de acesso para continuar.
+            Use o e-mail e a senha cadastrados pelo administrador.
           </p>
         </CardHeader>
 
-        <CardContent className="space-y-3">
+        <CardContent>
+          <form className="space-y-4" onSubmit={entrar} noValidate>
+            <div className="space-y-2">
+              <Label htmlFor="email">E-mail</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
 
-          <Button
-            type="button"
-            className="w-full"
-            onClick={entrarComoAdmin}
-          >
-            <ShieldCheck className="h-4 w-4" />
-            Entrar como Administrador
-          </Button>
+            <div className="space-y-2">
+              <Label htmlFor="senha">Senha</Label>
+              <Input
+                id="senha"
+                type="password"
+                autoComplete="current-password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+              />
+            </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={entrarComoUsuario}
-          >
-            <User className="h-4 w-4" />
-            Entrar como Usuário
-          </Button>
+            {erro && (
+              <p role="alert" className="text-sm text-red-600">
+                {erro}
+              </p>
+            )}
 
+            <Button type="submit" className="w-full" disabled={enviando}>
+              <LogIn className="h-4 w-4" />
+              {enviando ? "Entrando..." : "Entrar"}
+            </Button>
+          </form>
         </CardContent>
 
       </Card>

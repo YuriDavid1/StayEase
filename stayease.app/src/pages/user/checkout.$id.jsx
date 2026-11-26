@@ -18,7 +18,6 @@ import {
 
 import { fetchRoomById } from "../../services/roomsService";
 
-import { getRoomDailyRate } from "../../services/roomDailyRatesStorage";
 
 function moeda(valor) {
   return valor.toLocaleString("pt-BR", {
@@ -140,7 +139,6 @@ function CheckoutCliente() {
 
   const diaria =
     quarto?.diaria ??
-    getRoomDailyRate(reserva.roomId) ??
     0;
 
   // Taxa de serviço de 5%

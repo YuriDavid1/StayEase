@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace StayEase.Api.Models;
 
@@ -22,6 +23,9 @@ public class Room
     public int Capacity { get; set; }
 
     public RoomStatus Status { get; set; }
+
+    [Precision(10, 2)]
+    public decimal DailyRate { get; set; }
 }
 
 public enum RoomStatus

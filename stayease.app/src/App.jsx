@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 
 import Login from "./pages/login";
 
@@ -20,41 +21,55 @@ import Checkin from "./pages/user/checkin.$id"
 import RoomList from "./pages/user/roomList"
 
 import Layout from "./components/layout/layout";
+import ProtectedRoute from "./components/layout/protectedRoute";
 
 import "./App.css";
 
-import UserProvider from "./lib/userProvider"; {/*Tirar quando tiver autenticação real */}
+import UserProvider from "./lib/userProvider";
+import { FRONT_DESK_ROLES, ROLES, STAFF_ROLES } from "./lib/authSession";
 
 function App() {
   return (
-    <UserProvider> {/* Utilizado para autenticação mockada enquanto não tem banco */}
+    <UserProvider>
     <BrowserRouter>
+      <Toaster richColors position="top-right" />
       <Routes>
 
         {/* Sem layout */}
         <Route path="/" element={<Login />} />
 
-        {/* Com layout */}
+        {/* Com layout: exige usuário logado */}
+        <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           {/*ADM */}
-          <Route path="/homeAdm" element={<DashboardADM />} />
-          <Route path="/rooms" element={<RoomsPage />} />
-          <Route path="/guests" element={<Guests />} />
-          <Route path="/usersAdm" element={<UsersAdm />} /> 
-          <Route path="/schedulingAdm" element={<SchedulingAdm />} />
-
+          <Route element={<ProtectedRoute roles={STAFF_ROLES} />}>
+            <Route path="/homeAdm" element={<DashboardADM />} />
+          </Route>
+          <Route element={<ProtectedRoute roles={[ROLES.ADMIN]} />}>
+            <Route path="/rooms" element={<RoomsPage />} />
+            <Route path="/usersAdm" element={<UsersAdm />} />
+          </Route>
+          <Route element={<ProtectedRoute roles={FRONT_DESK_ROLES} />}>
+            <Route path="/guests" element={<Guests />} />
+            <Route path="/schedulingAdm" element={<SchedulingAdm />} />
+          </Route>
 
           {/*Usuario */}
-          <Route path="/user" element={<UserPage />} /> 
-          <Route path="/user/roomDetail/:id" element={<RoomDetail />} />
-          <Route path="/bookin" element={<BookinForm />} /> 
-          <Route path="/myBookin" element={<MyBookin />} />
-          <Route path="/user/bookinDetail/:id" element={<BookinDetail />} />
-          <Route path="/user/checkout/:id" element={<Checkout />} />
-          <Route path="/user/checkin/:id" element={<Checkin/>} />
-          <Route path="/roomList" element={<RoomList />} />
+          <Route element={<ProtectedRoute roles={[ROLES.GUEST]} />}>
+            <Route path="/user" element={<UserPage />} />
+            <Route path="/user/roomDetail/:id" element={<RoomDetail />} />
+            <Route path="/bookin" element={<BookinForm />} />
+            <Route path="/myBookin" element={<MyBookin />} />
+            <Route path="/user/bookinDetail/:id" element={<BookinDetail />} />
+            <Route path="/user/checkout/:id" element={<Checkout />} />
+            <Route path="/user/checkin/:id" element={<Checkin/>} />
+            <Route path="/roomList" element={<RoomList />} />
+          </Route>
 
         </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
 
       </Routes>
     </BrowserRouter>

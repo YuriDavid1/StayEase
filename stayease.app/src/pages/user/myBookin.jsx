@@ -19,7 +19,6 @@ import { fetchRoomById } from "../../services/roomsService";
 
 import { fetchCurrentGuest } from "../../services/guestsService";
 
-import { getRoomDailyRate } from "../../services/roomDailyRatesStorage";
 
 function moeda(valor) {
   return valor.toLocaleString("pt-BR", {
@@ -226,13 +225,9 @@ const saida =
 const quantidadeNoites =
   noites(entrada, saida);
 
-const diariaSalva = getRoomDailyRate(reserva.roomId);
-
 const diaria = Number.isFinite(Number(quarto?.diaria))
   ? Number(quarto.diaria)
-  : Number.isFinite(Number(diariaSalva))
-    ? Number(diariaSalva)
-    : 0;
+  : 0;
 
 
 const valorTotal =

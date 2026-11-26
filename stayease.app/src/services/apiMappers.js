@@ -32,9 +32,10 @@ export function mapRoomStatusToApi(status) {
     return 2;
 }
 
+// Unknown values fall back to the least privileged profile, never to Administrador.
 export function normalizeUserRole(role) {
     if (role === null || role === undefined || role === "") {
-        return "Administrador";
+        return "Hóspede";
     }
 
     const value = String(role).trim();
@@ -55,18 +56,19 @@ export function normalizeUserRole(role) {
         return "Governança";
     }
 
-    return "Administrador";
+    return "Hóspede";
 }
 
 export function mapUserRoleToApi(role) {
     const normalized = normalizeUserRole(role);
 
+    if (normalized === "Administrador") return 0;
     if (normalized === "Recepção") return 1;
     if (normalized === "Governança") return 2;
-    return 0;
+    return 3;
 }
 
-export function normalizeRoomFromApi(room, dailyRate = null) {
+export function normalizeRoomFromApi(room) {
     return {
         id: room?.roomId ?? room?.id ?? "",
         roomId: room?.roomId ?? room?.id ?? "",
@@ -74,7 +76,7 @@ export function normalizeRoomFromApi(room, dailyRate = null) {
         tipo: room?.type ?? "",
         capacidade: Number(room?.capacity ?? 0),
         status: normalizeRoomStatus(room?.status),
-        diaria: dailyRate ?? null,
+        diaria: Number(room?.dailyRate ?? 0),
     };
 }
 
@@ -83,14 +85,13 @@ export function createRoomPayloadFromUi(room) {
         number: String(room.numero ?? "").trim(),
         type: String(room.tipo ?? "").trim(),
         capacity: Number(room.capacidade ?? 0),
+        dailyRate: Number(room.diaria ?? 0),
     };
 }
 
 export function updateRoomPayloadFromUi(room) {
     return {
-        number: String(room.numero ?? "").trim(),
-        type: String(room.tipo ?? "").trim(),
-        capacity: Number(room.capacidade ?? 0),
+        ...createRoomPayloadFromUi(room),
         status: mapRoomStatusToApi(room.status),
     };
 }
@@ -131,12 +132,15 @@ export function createUserPayloadFromUi(user) {
     return {
         email: String(user.email ?? "").trim(),
         role: mapUserRoleToApi(user.perfil),
+        password: user.senha ?? "",
     };
 }
 
 export function updateUserPayloadFromUi(user) {
     return {
         role: mapUserRoleToApi(user.perfil),
+        // Blank keeps the current password.
+        password: user.senha ? user.senha : null,
     };
 }
 

@@ -83,7 +83,7 @@ public class ReservationTests
     public void CheckOut_DeveRegistrarDataDeSaida()
     {
         // Arrange
-        var reservation = new Reservation();
+        var reservation = new Reservation { ActualCheckIn = DateTime.UtcNow.AddHours(-1) };
 
         // Act
         reservation.CheckOut();
@@ -96,7 +96,7 @@ public class ReservationTests
     public void CheckOut_DeveDefinirDataAtualAproximada()
     {
         // Arrange
-        var reservation = new Reservation();
+        var reservation = new Reservation { ActualCheckIn = DateTime.UtcNow.AddHours(-1) };
 
         var before = DateTime.UtcNow;
 
@@ -160,7 +160,7 @@ public class ReservationTests
     public void CheckOut_NaoDeveAlterarStatusDeCancelamento()
     {
         // Arrange
-        var reservation = new Reservation();
+        var reservation = new Reservation { ActualCheckIn = DateTime.UtcNow.AddHours(-1) };
 
         // Act
         reservation.CheckOut();
