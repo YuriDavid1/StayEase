@@ -173,9 +173,11 @@ npm run dev
 
 # Testes
 
-O projeto utiliza **XUnit** para testes unitários, seguindo o padrão **AAA (Arrange, Act, Assert)**.
+O backend utiliza **XUnit**, seguindo o padrão **AAA (Arrange, Act, Assert)**, e o frontend utiliza **Vitest** com jsdom.
 
-Os testes utilizam o **Entity Framework Core InMemory**, permitindo executar os testes sem utilizar o banco de dados real.
+Os testes do backend utilizam o **Entity Framework Core InMemory**, permitindo executar os testes sem utilizar o banco de dados real. Os testes de integração (`StayEase.Tests/Integration`) sobem a API completa com `WebApplicationFactory`, incluindo autenticação JWT, autorização e tratamento de erros.
+
+> O InMemory não reproduz transações nem concorrência do PostgreSQL. Cenários de concorrência e migrations precisam de PostgreSQL real (ver [matriz de evidências](docs/qa/matriz-evidencias.md)).
 
 ## Instalação e Execução
 
@@ -197,26 +199,45 @@ Executar os testes com mais detalhes:
 dotnet test --logger "console;verbosity=detailed"
 ```
 
+Executar os testes do frontend:
+
+```bash
+cd stayease.app
+npm test
+```
+
 ## Funcionalidades Testadas
 
-Os testes abrangem as principais funcionalidades do backend:
+Backend:
 
-- Hóspedes;
-- Quartos;
-- Usuários;
-- Reservas;
-- Check-in;
-- Check-out;
-- Cancelamento de reservas;
-- Consultas e filtros.
+- Hóspedes, quartos, usuários e reservas;
+- Check-in, check-out, cancelamento e limpeza, incluindo o status do quarto;
+- Transições de estado da reserva via HTTP (409 nas transições inválidas);
+- Validação de datas e sobreposição de reservas;
+- Autenticação (login, JWT, limite de tentativas) e matriz de autorização por rota e perfil;
+- Tratamento de erros com ProblemDetails.
+
+Frontend:
+
+- Sessão (F5, expiração, logout) e interceptadores da API (token, 401, 403);
+- Serviço de hóspedes.
 
 ## Resultado Atual
 
-| Total | Sucesso | Falhas | Ignorados | Duração |
+| Suíte | Total | Sucesso | Falhas | Ignorados |
 |---|---|---|---|---|
-| 65 | 60 | 5 | 0 | 2,1s |
+| Backend (`dotnet test`) | 280 | 274 | 0 | 6 |
+| Frontend (`npm test`) | 39 | 38 | 0 | 1 |
 
-Atualmente, **60 testes estão sendo executados com sucesso** e **5 testes ainda possuem falhas que estão sendo corrigidas**.
+Os testes **ignorados** descrevem defeitos conhecidos e falham hoje se o `Skip` for removido. Eles ficam marcados até a correção:
+
+| Teste | Defeito | Liberação |
+|---|---|---|
+| `GuestOwnershipTests` (backend) | Hóspede lê e altera dados de outros hóspedes (R01/R02) | M07: vínculo User ↔ Guest |
+| `RoomStatusConsistencyTests` (backend) | PUT de quarto aceita qualquer status (R06) | Correção em `RoomService.UpdateAsync` |
+| `guestsService.test.js` (frontend) | `fetchCurrentGuest` devolve sempre o primeiro hóspede (R03) | M07 |
+
+Ao corrigir um desses defeitos, remova o `Skip` (ou `it.skip`) do teste correspondente. Detalhes e evidências em [docs/qa/matriz-evidencias.md](docs/qa/matriz-evidencias.md).
 
 --- 
 
