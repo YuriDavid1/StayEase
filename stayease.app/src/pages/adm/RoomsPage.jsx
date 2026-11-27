@@ -44,6 +44,7 @@ import {
   finishCleaning,
   updateRoom,
 } from "../../services/roomsService";
+import { formatarMoeda } from "../../lib/formatters";
 
 const quartoVazio = {
   id: "",
@@ -52,17 +53,6 @@ const quartoVazio = {
   capacidade: 2,
   diaria: 300,
   status: "Livre",
-};
-
-const moeda = (valor) => {
-  if (valor === null || valor === undefined || valor === "") {
-    return "R$ 0,00";
-  }
-
-  return Number(valor).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
 };
 
 const getStatusClass = (status) => {
@@ -308,7 +298,7 @@ function Quartos() {
                   <TableCell className="font-medium">{quarto.numero}</TableCell>
                   <TableCell>{quarto.tipo}</TableCell>
                   <TableCell>{quarto.capacidade}</TableCell>
-                  <TableCell>{moeda(diaria)}</TableCell>
+                  <TableCell>{formatarMoeda(diaria)}</TableCell>
 
                   <TableCell className="min-w-[280px]">
                     <div className="flex items-center gap-10 whitespace-nowrap">

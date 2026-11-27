@@ -58,6 +58,7 @@ import {
   createReservation,
   fetchReservations,
 } from "../../services/reservationsService";
+import { formatarData } from "../../lib/formatters";
 
 function hojeISO() {
   return new Date().toISOString().slice(0, 10);
@@ -67,12 +68,6 @@ function amanhaISO() {
   const data = new Date();
   data.setDate(data.getDate() + 1);
   return data.toISOString().slice(0, 10);
-}
-
-function dataBR(data) {
-  if (!data) return "—";
-  const [ano, mes, dia] = String(data).split("-");
-  return `${dia}/${mes}/${ano}`;
 }
 
 function StatusQuartoBadge({ status }) {
@@ -475,8 +470,8 @@ function Reservas() {
                       <TableCell>
                         {quarto ? `${quarto.numero} — ${quarto.tipo}` : reserva.roomNumber || "—"}
                       </TableCell>
-                      <TableCell>{dataBR(reserva.entrada)}</TableCell>
-                      <TableCell>{dataBR(reserva.saida)}</TableCell>
+                      <TableCell>{formatarData(reserva.entrada)}</TableCell>
+                      <TableCell>{formatarData(reserva.saida)}</TableCell>
                       <TableCell>
                         <StatusQuartoBadge status={reserva.status} />
                       </TableCell>

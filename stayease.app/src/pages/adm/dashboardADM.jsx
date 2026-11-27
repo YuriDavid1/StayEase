@@ -14,6 +14,10 @@ import {
 import { fetchRooms, finishCleaning } from "../../services/roomsService";
 import { CLEANING_ROLES, FRONT_DESK_ROLES } from "../../lib/authSession";
 import { useUser } from "../../lib/useUser";
+import { formatarMoeda } from "../../lib/formatters";
+
+const diariaInformada = (valor) =>
+  valor !== null && valor !== undefined && valor !== "";
 
 function DashboardADM() {
   const { role } = useUser();
@@ -26,17 +30,6 @@ function DashboardADM() {
   const [busca, setBusca] = useState("");
 
   const filtros = ["Todos", "Livre", "Ocupado", "Limpeza Pendente"];
-
-  const moeda = (valor) => {
-    if (valor === null || valor === undefined || valor === "") {
-      return "Não informada";
-    }
-
-    return Number(valor).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
-  };
 
   const carregarDados = async () => {
     try {
@@ -231,7 +224,7 @@ function DashboardADM() {
                       {quarto.tipo} · {quarto.capacidade} pessoa(s)
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Diária: {moeda(quarto.diaria)}
+                      Diária: {diariaInformada(quarto.diaria) ? formatarMoeda(quarto.diaria) : "Não informada"}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Hóspede: {hospedeAtual || "Nenhum"}

@@ -25,13 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-
-const moeda = (valor) => {
-  return Number(valor).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-};
+import { calcularNoites, formatarMoeda } from "../../lib/formatters";
 
 const hojeISO = () => {
   const hoje = new Date();
@@ -95,30 +89,7 @@ function BookinForm() {
     (q) => q.status === "Livre"
   );
 
-
-  const calcularDiarias = () => {
-    if (!entrada || !saida) {
-      return 0;
-    }
-
-    const dataEntrada = new Date(
-      `${entrada}T00:00:00`
-    );
-
-    const dataSaida = new Date(
-      `${saida}T00:00:00`
-    );
-
-    const diferenca =
-      dataSaida.getTime() -
-      dataEntrada.getTime();
-
-    return Math.ceil(
-      diferenca / (1000 * 60 * 60 * 24)
-    );
-  };
-
-  const diarias = calcularDiarias();
+  const diarias = calcularNoites(entrada, saida);
 
   const valorTotal = quarto
     ? quarto.diaria * diarias
@@ -250,7 +221,7 @@ function BookinForm() {
                       value={String(q.id)}
                     >
                       {q.numero} — {q.tipo} (
-                      {moeda(q.diaria)})
+                      {formatarMoeda(q.diaria)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -353,14 +324,14 @@ function BookinForm() {
               <p className="text-muted-foreground">
                 Diária:{" "}
                 <strong>
-                  {moeda(quarto.diaria)}
+                  {formatarMoeda(quarto.diaria)}
                 </strong>
               </p>
             )}
 
             {/* Valor total */}
             <p className="font-display text-2xl font-semibold text-foreground">
-              {moeda(valorTotal)}
+              {formatarMoeda(valorTotal)}
             </p>
 
             {/* Aviso de datas inválidas */}

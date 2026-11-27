@@ -13,19 +13,7 @@ import {
 import { fetchRooms } from "../../services/roomsService";
 import { fetchCurrentGuest } from "../../services/guestsService";
 import { fetchReservationsByGuest } from "../../services/reservationsService";
-
-const moeda = (valor) => {
-  return Number(valor).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-};
-
-const dataBR = (data) => {
-  if (!data) return "";
-
-  return new Date(`${data}T00:00:00`).toLocaleDateString("pt-BR");
-};
+import { formatarData, formatarMoeda } from "../../lib/formatters";
 
 function ClienteDashboard() {
   const [hospede, setHospede] = useState(null);
@@ -116,7 +104,7 @@ function ClienteDashboard() {
                     {quartoPorId(hospedado.roomId)?.numero ??
                       hospedado.roomNumber}
                   </strong>{" "}
-                  até {dataBR(hospedado.saida)}.
+                  até {formatarData(hospedado.saida, "")}.
                 </p>
 
                 <Button
@@ -137,8 +125,8 @@ function ClienteDashboard() {
                     {quartoPorId(proxima.roomId)?.numero ??
                       proxima.roomNumber}
                   </strong>{" "}
-                  de {dataBR(proxima.entrada)} a{" "}
-                  {dataBR(proxima.saida)}.
+                  de {formatarData(proxima.entrada, "")} a{" "}
+                  {formatarData(proxima.saida, "")}.
                 </p>
 
                 <Button
@@ -227,7 +215,7 @@ function ClienteDashboard() {
                     </span>
 
                     <span>
-                      {moeda(quarto.diaria)} / noite
+                      {formatarMoeda(quarto.diaria)} / noite
                     </span>
                   </div>
 

@@ -18,45 +18,8 @@ import {
 import { fetchRoomById } from "../../services/roomsService";
 
 import { fetchCurrentGuest } from "../../services/guestsService";
+import { calcularNoites, formatarData, formatarMoeda } from "../../lib/formatters";
 
-
-function moeda(valor) {
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
-function dataBR(data) {
-  if (!data) return "—";
-
-  const dataNormalizada = String(data).slice(0, 10);
-
-  return new Date(
-    `${dataNormalizada}T00:00:00`
-  ).toLocaleDateString("pt-BR");
-}
-
-function noites(entrada, saida) {
-  if (!entrada || !saida) return 0;
-
-  const inicio = new Date(
-    `${entrada}T00:00:00`
-  );
-
-  const fim = new Date(
-    `${saida}T00:00:00`
-  );
-
-  const diferenca = fim - inicio;
-
-  return Math.max(
-    0,
-    Math.ceil(
-      diferenca / (1000 * 60 * 60 * 24)
-    )
-  );
-}
 
 const filtros = [
   "Todas",
@@ -223,7 +186,7 @@ function MinhasReservas() {
               "";
 
             const quantidadeNoites =
-              noites(entrada, saida);
+              calcularNoites(entrada, saida);
 
             const diaria = Number.isFinite(Number(quarto?.diaria))
               ? Number(quarto.diaria)
@@ -267,7 +230,7 @@ function MinhasReservas() {
                       </span>
 
                       <span className="text-sm font-medium">
-                        {dataBR(
+                        {formatarData(
                           entrada
                         )}
                       </span>
@@ -279,7 +242,7 @@ function MinhasReservas() {
                       </span>
 
                       <span className="text-sm font-medium">
-                        {dataBR(
+                        {formatarData(
                           saida
                         )}
                       </span>
@@ -291,7 +254,7 @@ function MinhasReservas() {
                       </span>
 
                       <span className="text-sm font-medium">
-                        {moeda(valorTotal)}
+                        {formatarMoeda(valorTotal)}
                       </span>
                     </div>
 

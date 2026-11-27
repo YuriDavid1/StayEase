@@ -13,43 +13,8 @@ import {
 import { Badge } from "../../components/ui/badge";
 import { fetchReservationById, cancelReservation as cancelReservationApi } from "../../services/reservationsService";
 import { fetchRoomById } from "../../services/roomsService";
+import { calcularNoites, formatarData, formatarDataHora, formatarMoeda } from "../../lib/formatters";
 
-function moeda(valor) {
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
-function dataBR(data) {
-  if (!data) return "—";
-
-  return new Date(`${data}T00:00:00`).toLocaleDateString(
-    "pt-BR"
-  );
-}
-
-function dataHoraBR(data) {
-  if (!data) return "—";
-
-  return new Date(data).toLocaleString("pt-BR");
-}
-
-function noites(entrada, saida) {
-  if (!entrada || !saida) return 0;
-
-  const inicio = new Date(`${entrada}T00:00:00`);
-  const fim = new Date(`${saida}T00:00:00`);
-
-  const diferenca = fim - inicio;
-
-  return Math.max(
-    0,
-    Math.ceil(
-      diferenca / (1000 * 60 * 60 * 24)
-    )
-  );
-}
 function DetalhesReserva() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -109,7 +74,7 @@ function DetalhesReserva() {
     );
   }
 
-  const n = noites(
+  const n = calcularNoites(
     reserva.entrada,
     reserva.saida
   );
@@ -197,12 +162,12 @@ function DetalhesReserva() {
 
             <Info
               rotulo="Entrada"
-              valor={dataBR(reserva.entrada)}
+              valor={formatarData(reserva.entrada)}
             />
 
             <Info
               rotulo="Saída"
-              valor={dataBR(reserva.saida)}
+              valor={formatarData(reserva.saida)}
             />
 
             <Info
@@ -212,21 +177,21 @@ function DetalhesReserva() {
 
             <Info
               rotulo="Diária"
-              valor={moeda(
+              valor={formatarMoeda(
                 quarto?.diaria ?? 0
               )}
             />
 
             <Info
               rotulo="Check-in feito em"
-              valor={dataHoraBR(
+              valor={formatarDataHora(
                 reserva.checkinEm
               )}
             />
 
             <Info
               rotulo="Check-out feito em"
-              valor={dataHoraBR(
+              valor={formatarDataHora(
                 reserva.checkoutEm
               )}
             />
@@ -257,7 +222,7 @@ function DetalhesReserva() {
 
             {/* VALOR TOTAL */}
             <p className="font-display text-2xl font-semibold text-foreground">
-              {moeda(
+              {formatarMoeda(
                 (quarto?.diaria ?? 0) * n
               )}
             </p>
