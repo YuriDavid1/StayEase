@@ -212,36 +212,25 @@ function MinhasReservas() {
             const quarto =
               quartos[reserva.roomId];
 
-const entrada =
-  reserva.entrada ||
-  reserva.scheduledCheckIn ||
-  "";
+            const entrada =
+              reserva.entrada ||
+              reserva.scheduledCheckIn ||
+              "";
 
-const saida =
-  reserva.saida ||
-  reserva.scheduledCheckOut ||
-  "";
+            const saida =
+              reserva.saida ||
+              reserva.scheduledCheckOut ||
+              "";
 
-const quantidadeNoites =
-  noites(entrada, saida);
+            const quantidadeNoites =
+              noites(entrada, saida);
 
-const diaria = Number.isFinite(Number(quarto?.diaria))
-  ? Number(quarto.diaria)
-  : 0;
+            const diaria = Number.isFinite(Number(quarto?.diaria))
+              ? Number(quarto.diaria)
+              : 0;
 
-
-const valorTotal =
-  diaria * quantidadeNoites;
-
-console.log("DEBUG MYBOOKIN:", {
-  reserva,
-  quarto,
-  entrada,
-  saida,
-  quantidadeNoites,
-  diaria,
-  valorTotal: diaria * quantidadeNoites,
-});
+            const valorTotal =
+              diaria * quantidadeNoites;
 
             return (
               <Card
