@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { BedDouble, Search, Sparkles } from "lucide-react";
 
 import { Button } from "../../components/ui/button";
@@ -10,10 +11,15 @@ import {
   checkOutReservation,
   fetchReservations,
 } from "../../services/reservationsService";
-import { fetchRooms, finishCleaning, updateRoom } from "../../services/roomsService";
-import { getRoomDailyRate } from "../../services/roomDailyRatesStorage";
+import { fetchRooms, finishCleaning } from "../../services/roomsService";
+import { CLEANING_ROLES, FRONT_DESK_ROLES } from "../../lib/authSession";
+import { useUser } from "../../lib/useUser";
 
 function DashboardADM() {
+  const { role } = useUser();
+  const podeLimpar = CLEANING_ROLES.includes(role);
+  const podeRecepcionar = FRONT_DESK_ROLES.includes(role);
+
   const [quartos, setQuartos] = useState([]);
   const [reservas, setReservas] = useState([]);
   const [filtro, setFiltro] = useState("Todos");
@@ -35,12 +41,8 @@ function DashboardADM() {
   const carregarDados = async () => {
     try {
       const [rooms, bookings] = await Promise.all([fetchRooms(), fetchReservations()]);
-      const roomsWithRates = rooms.map((room) => ({
-        ...room,
-        diaria: getRoomDailyRate(room.roomId ?? room.id),
-      }));
 
-      setQuartos(roomsWithRates);
+      setQuartos(rooms);
       setReservas(bookings);
     } catch {
       setQuartos([]);
@@ -80,10 +82,10 @@ function DashboardADM() {
 
   const concluirLimpeza = async (quarto) => {
     try {
-      await finishCleaning(quarto.roomId ?? quarto.id, quarto);
+      await finishCleaning(quarto.roomId ?? quarto.id);
       await carregarDados();
-    } catch {
-      // noop
+    } catch (error) {
+      toast.error(error.message || "Não foi possível concluir a limpeza.");
     }
   };
 
@@ -97,16 +99,11 @@ function DashboardADM() {
     if (!reserva) return;
 
     try {
+      // The API marks the room as Occupied in the same transaction.
       await checkInReservation(reserva.id);
-      await updateRoom(reserva.roomId, {
-        numero: quarto.numero,
-        tipo: quarto.tipo,
-        capacidade: quarto.capacidade,
-        status: "Ocupado",
-      });
       await carregarDados();
-    } catch {
-      // noop
+    } catch (error) {
+      toast.error(error.message || "Não foi possível realizar o check-in.");
     }
   };
 
@@ -120,16 +117,11 @@ function DashboardADM() {
     if (!reserva) return;
 
     try {
+      // The API marks the room as PendingCleaning in the same transaction.
       await checkOutReservation(reserva.id);
-      await updateRoom(reserva.roomId, {
-        numero: quarto.numero,
-        tipo: quarto.tipo,
-        capacidade: quarto.capacidade,
-        status: "Limpeza Pendente",
-      });
       await carregarDados();
-    } catch {
-      // noop
+    } catch (error) {
+      toast.error(error.message || "Não foi possível realizar o check-out.");
     }
   };
 
@@ -248,20 +240,20 @@ function DashboardADM() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {quarto.status === "Limpeza Pendente" && (
+                  {podeLimpar && quarto.status === "Limpeza Pendente" && (
                     <Button onClick={() => concluirLimpeza(quarto)} size="sm">
                       <Sparkles className="mr-1 h-4 w-4" />
                       Limpeza concluída
                     </Button>
                   )}
 
-                  {quarto.status === "Livre" && (
+                  {podeRecepcionar && quarto.status === "Livre" && (
                     <Button onClick={() => realizarCheckin(quarto)} variant="outline" size="sm">
                       Check-in
                     </Button>
                   )}
 
-                  {quarto.status === "Ocupado" && (
+                  {podeRecepcionar && quarto.status === "Ocupado" && (
                     <Button onClick={() => realizarCheckout(quarto)} variant="outline" size="sm">
                       Check-out
                     </Button>

@@ -32,12 +32,16 @@ const perfis = [
   { value: "Administrador", label: "Administrador" },
   { value: "Recepção", label: "Recepção" },
   { value: "Governança", label: "Governança" },
+  { value: "Hóspede", label: "Hóspede" },
 ];
+
+const SENHA_MINIMA = 8;
 
 const usuarioVazio = {
   id: "",
   email: "",
-  perfil: "Administrador",
+  perfil: "Recepção",
+  senha: "",
 };
 
 function Users() {
@@ -74,6 +78,12 @@ function Users() {
       return;
     }
 
+    // Required when creating; optional when editing (blank keeps the current one).
+    if ((!form.id || form.senha) && form.senha.length < SENHA_MINIMA) {
+      toast.error(`A senha deve ter pelo menos ${SENHA_MINIMA} caracteres.`);
+      return;
+    }
+
     try {
       if (form.id) {
         const atualizado = await updateUser(form.id, form);
@@ -105,6 +115,7 @@ function Users() {
       id: usuario.id,
       email: usuario.email,
       perfil: usuario.perfil,
+      senha: "",
     });
     setAberto(true);
   };
@@ -218,6 +229,18 @@ function Users() {
                 value={form.email}
                 disabled={Boolean(form.id)}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="senha">{form.id ? "Nova senha" : "Senha"}</Label>
+              <Input
+                id="senha"
+                type="password"
+                autoComplete="new-password"
+                value={form.senha}
+                placeholder={form.id ? "Deixe em branco para manter a atual" : `Mínimo de ${SENHA_MINIMA} caracteres`}
+                onChange={(e) => setForm({ ...form, senha: e.target.value })}
               />
             </div>
 

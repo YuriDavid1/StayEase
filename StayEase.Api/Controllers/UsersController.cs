@@ -1,96 +1,46 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StayEase.Api.Data;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using StayEase.Api.Auth;
 using StayEase.Api.Dtos;
-using StayEase.Api.Models;
+using StayEase.Api.Services;
 
 namespace StayEase.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = Roles.Administrator)]
 public class UsersController : ControllerBase
 {
-    private readonly AppDbContext _db;
+    private readonly IUserService _userService;
 
-    public UsersController(AppDbContext db)
+    public UsersController(IUserService userService)
     {
-        _db = db;
+        _userService = userService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetUsers()
     {
-        try
-        {
-            var users = await _db.Users.AsNoTracking().ToListAsync();
-            return Ok(users);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = ex.Message });
-        }
+        return Ok(await _userService.GetAllAsync());
     }
 
     [HttpPost]
     public async Task<IActionResult> AddUser(CreateUserDto dto)
     {
-        try
-        {
-            var user = new User
-            {
-                Email = dto.Email,
-                Role = dto.Role
-            };
-            await _db.Users.AddAsync(user);
-            await _db.SaveChangesAsync();
-            return Ok(user);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = ex.Message });
-        }
+        return Ok(await _userService.CreateAsync(dto));
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(int id, UpdateUserDto dto)
     {
-        try
-        {
-            var user = await _db.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound(new { message = "User not found" });
-            }
-
-            user.Role = dto.Role;
-            _db.Users.Update(user);
-            await _db.SaveChangesAsync();
-            return Ok(user);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = ex.Message });
-        }
+        var user = await _userService.UpdateAsync(id, dto);
+        return user == null ? NotFound(new { message = "User not found" }) : Ok(user);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        try
-        {
-            var user = await _db.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound(new { message = "User not found" });
-            }
-
-            _db.Users.Remove(user);
-            await _db.SaveChangesAsync();
-            return Ok(user);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = ex.Message });
-        }
+        var user = await _userService.DeleteAsync(id);
+        return user == null ? NotFound(new { message = "User not found" }) : Ok(user);
     }
 }

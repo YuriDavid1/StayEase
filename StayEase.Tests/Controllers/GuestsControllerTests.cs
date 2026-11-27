@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using StayEase.Api.Controllers;
 using StayEase.Api.Dtos;
 using StayEase.Api.Models;
+using StayEase.Api.Services;
 
 namespace StayEase.Tests.Controllers;
 
@@ -30,7 +31,7 @@ public class GuestsControllerTests
 
         await db.SaveChangesAsync();
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         // Act
         var result = await controller.GetGuests();
@@ -48,7 +49,7 @@ public class GuestsControllerTests
         // Arrange
         using var db = TestDbContextFactory.Create();
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         // Act
         var result = await controller.GetGuests();
@@ -66,7 +67,7 @@ public class GuestsControllerTests
         // Arrange
         using var db = TestDbContextFactory.Create();
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         var dto = new CreateGuestDto(
             "João Silva",
@@ -94,7 +95,7 @@ public class GuestsControllerTests
         // Arrange
         using var db = TestDbContextFactory.Create();
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         var dto = new CreateGuestDto(
             "Carlos Souza",
@@ -118,7 +119,7 @@ public class GuestsControllerTests
         // Arrange
         using var db = TestDbContextFactory.Create();
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         var dto = new CreateGuestDto(
             "Ana Souza",
@@ -153,7 +154,7 @@ public class GuestsControllerTests
         db.Guests.Add(guest);
         await db.SaveChangesAsync();
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         var dto = new UpdateGuestDto(
             "João Santos",
@@ -181,7 +182,7 @@ public class GuestsControllerTests
         // Arrange
         using var db = TestDbContextFactory.Create();
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         var dto = new UpdateGuestDto(
             "João Santos",
@@ -216,7 +217,7 @@ public class GuestsControllerTests
 
         var originalId = guest.GuestId;
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         var dto = new UpdateGuestDto(
             "Novo Nome",
@@ -251,7 +252,7 @@ public class GuestsControllerTests
         db.Guests.Add(guest);
         await db.SaveChangesAsync();
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         // Act
         var result = await controller.DeleteGuest(guest.GuestId);
@@ -267,7 +268,7 @@ public class GuestsControllerTests
         // Arrange
         using var db = TestDbContextFactory.Create();
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         // Act
         var result = await controller.DeleteGuest(999);
@@ -301,7 +302,7 @@ public class GuestsControllerTests
         db.Guests.AddRange(guest1, guest2);
         await db.SaveChangesAsync();
 
-        var controller = new GuestsController(db);
+        var controller = new GuestsController(new GuestService(db));
 
         // Act
         await controller.DeleteGuest(guest1.GuestId);

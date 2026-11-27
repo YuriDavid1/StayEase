@@ -229,13 +229,8 @@ function Reservas() {
 
     try {
       await checkInReservation(reserva.id ?? reserva.reservationId);
-      setReservas((atual) =>
-        atual.map((item) =>
-          (item.id ?? item.reservationId) === (reserva.id ?? reserva.reservationId)
-            ? { ...item, status: "Hospedado" }
-            : item
-        )
-      );
+      // Reload so the room status changed by the API (Occupied) is shown.
+      await carregarDados();
       toast.success("Check-in realizado.");
     } catch (error) {
       toast.error(error.message || "Não foi possível realizar o check-in.");
@@ -245,13 +240,8 @@ function Reservas() {
   const realizarCheckout = async (reserva) => {
     try {
       await checkOutReservation(reserva.id ?? reserva.reservationId);
-      setReservas((atual) =>
-        atual.map((item) =>
-          (item.id ?? item.reservationId) === (reserva.id ?? reserva.reservationId)
-            ? { ...item, status: "Finalizada" }
-            : item
-        )
-      );
+      // Reload so the room status changed by the API (PendingCleaning) is shown.
+      await carregarDados();
       toast.success("Check-out concluído.");
     } catch (error) {
       toast.error(error.message || "Não foi possível realizar o check-out.");
