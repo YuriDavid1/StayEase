@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -55,7 +56,16 @@ builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+// Auth:Disabled=true turns the login off: every request runs as an administrator.
+// Development only, so it can never reach production by accident.
+var authDisabled = builder.Configuration.GetValue("Auth:Disabled", false);
+if (authDisabled && !builder.Environment.IsDevelopment())
+{
+    throw new InvalidOperationException("Auth:Disabled is only allowed in the Development environment.");
+}
+
+builder.Services.AddAuthentication(authDisabled ? NoLoginAuthenticationHandler.SchemeName : JwtBearerDefaults.AuthenticationScheme)
+    .AddScheme<AuthenticationSchemeOptions, NoLoginAuthenticationHandler>(NoLoginAuthenticationHandler.SchemeName, null)
     .AddJwtBearer(options =>
     {
         options.MapInboundClaims = false;
@@ -95,6 +105,11 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+if (authDisabled)
+{
+    app.Logger.LogWarning("Auth:Disabled=true: login is off and every request runs as an administrator.");
+}
 
 if (usingEphemeralJwtKey)
 {

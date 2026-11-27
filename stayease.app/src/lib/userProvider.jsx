@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 
 import UserContext from "./userContext";
-import { ROLES, clearSession, loadSession, saveSession } from "./authSession";
+import { AUTH_DISABLED, NO_LOGIN_SESSION, ROLES, clearSession, loadSession, saveSession } from "./authSession";
 import { UNAUTHORIZED_EVENT } from "../infra/api";
 import { login as loginRequest } from "../services/authService";
 
 function UserProvider({ children }) {
   // Restored from localStorage, so the session survives a page reload.
-  const [session, setSession] = useState(() => loadSession());
+  const [session, setSession] = useState(() => (AUTH_DISABLED ? NO_LOGIN_SESSION : loadSession()));
 
   useEffect(() => {
+    if (AUTH_DISABLED) return undefined;
+
     const onUnauthorized = () => setSession(null);
 
     window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
@@ -17,6 +19,8 @@ function UserProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
+    if (AUTH_DISABLED) return NO_LOGIN_SESSION;
+
     const novaSessao = await loginRequest(email, password);
     saveSession(novaSessao);
     setSession(novaSessao);
@@ -24,6 +28,8 @@ function UserProvider({ children }) {
   };
 
   const logout = () => {
+    if (AUTH_DISABLED) return;
+
     clearSession();
     setSession(null);
   };

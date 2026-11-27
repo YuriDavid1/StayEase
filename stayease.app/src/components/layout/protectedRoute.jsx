@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
-import { homePathFor } from "../../lib/authSession";
+import { AUTH_DISABLED, homePathFor } from "../../lib/authSession";
 import { useUser } from "../../lib/useUser";
 
 // Only renders the nested routes for a logged user with one of the given roles.
@@ -8,6 +8,11 @@ import { useUser } from "../../lib/useUser";
 function ProtectedRoute({ roles }) {
   const { isAuthenticated, role } = useUser();
   const location = useLocation();
+
+  // Login disabled: every page is open.
+  if (AUTH_DISABLED) {
+    return <Outlet />;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace state={{ from: location.pathname }} />;

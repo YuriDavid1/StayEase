@@ -25,7 +25,9 @@ public class StayEaseApiFactory : WebApplicationFactory<Program>
     private readonly Dictionary<string, string?> _settings = new()
     {
         ["Jwt:Key"] = JwtKey,
-        ["Auth:LoginAttemptsPerMinute"] = "1000"
+        ["Auth:LoginAttemptsPerMinute"] = "1000",
+        // appsettings.Development.json turns the login off; the tests need it on.
+        ["Auth:Disabled"] = "false"
     };
 
     public StayEaseApiFactory WithSetting(string key, string? value)

@@ -1,5 +1,9 @@
 const STORAGE_KEY = "stayease.session";
 
+// VITE_AUTH_DISABLED=true (see .env.development) skips the login screen and opens every
+// page as an administrator. It only works with an API running with Auth:Disabled=true.
+export const AUTH_DISABLED = import.meta.env.VITE_AUTH_DISABLED === "true";
+
 // Same names as the API's UserRole enum, which the API serializes as its index.
 export const ROLES = {
   ADMIN: "Administrator",
@@ -24,6 +28,13 @@ export function roleFromApi(role) {
 export function homePathFor(role) {
   return role === ROLES.GUEST ? "/user" : "/homeAdm";
 }
+
+// Session used while the login is disabled.
+export const NO_LOGIN_SESSION = {
+  token: null,
+  expiresAt: null,
+  user: { id: 0, email: "sem-login@stayease.local", role: ROLES.ADMIN },
+};
 
 export function loadSession() {
   try {
