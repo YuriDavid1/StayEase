@@ -11,10 +11,11 @@ import {
   checkOutReservation,
   fetchReservations,
 } from "../../services/reservationsService";
-import { fetchRooms, finishCleaning } from "../../services/roomsService";
+import { fetchRooms } from "../../services/roomsService";
 import { CLEANING_ROLES, FRONT_DESK_ROLES } from "../../lib/authSession";
 import { useUser } from "../../lib/useUser";
 import { formatarMoeda } from "../../lib/formatters";
+import { useConcluirLimpeza } from "../../lib/useConcluirLimpeza";
 
 const diariaInformada = (valor) =>
   valor !== null && valor !== undefined && valor !== "";
@@ -73,14 +74,7 @@ function DashboardADM() {
     return linha?.guestName || null;
   };
 
-  const concluirLimpeza = async (quarto) => {
-    try {
-      await finishCleaning(quarto.roomId ?? quarto.id);
-      await carregarDados();
-    } catch (error) {
-      toast.error(error.message || "Não foi possível concluir a limpeza.");
-    }
-  };
+  const { concluirLimpeza, limpandoId } = useConcluirLimpeza(carregarDados);
 
   const realizarCheckin = async (quarto) => {
     const reserva = reservas.find(
@@ -234,7 +228,11 @@ function DashboardADM() {
 
                 <div className="flex flex-wrap gap-2">
                   {podeLimpar && quarto.status === "Limpeza Pendente" && (
-                    <Button onClick={() => concluirLimpeza(quarto)} size="sm">
+                    <Button
+                      onClick={() => concluirLimpeza(quarto)}
+                      disabled={limpandoId === roomId}
+                      size="sm"
+                    >
                       <Sparkles className="mr-1 h-4 w-4" />
                       Limpeza concluída
                     </Button>

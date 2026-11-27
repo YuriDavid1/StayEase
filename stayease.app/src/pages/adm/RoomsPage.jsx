@@ -41,10 +41,10 @@ import {
   createRoom,
   deleteRoom,
   fetchRooms,
-  finishCleaning,
   updateRoom,
 } from "../../services/roomsService";
 import { formatarMoeda } from "../../lib/formatters";
+import { useConcluirLimpeza } from "../../lib/useConcluirLimpeza";
 
 const quartoVazio = {
   id: "",
@@ -165,24 +165,17 @@ function Quartos() {
     }
   };
 
-  const concluirLimpeza = async (quarto) => {
-    const roomId = quarto.roomId ?? quarto.id;
-
-    try {
-      await finishCleaning(roomId);
-
-      setQuartos((atual) =>
-        atual.map((item) =>
-          (item.roomId ?? item.id) === roomId
-            ? { ...item, status: "Livre" }
-            : item
-        )
-      );
-      toast.success(`Limpeza do quarto ${quarto.numero} concluída.`);
-    } catch (error) {
-      toast.error(error.message || "Não foi possível concluir a limpeza.");
-    }
+  const marcarComoLivre = (roomId) => {
+    setQuartos((atual) =>
+      atual.map((item) =>
+        (item.roomId ?? item.id) === roomId
+          ? { ...item, status: "Livre" }
+          : item
+      )
+    );
   };
+
+  const { concluirLimpeza, limpandoId } = useConcluirLimpeza(marcarComoLivre);
 
   return (
     <div className="space-y-6">
@@ -307,7 +300,13 @@ function Quartos() {
                       </Badge>
 
                       {quarto.status === "Limpeza Pendente" && (
-                        <Button size="sm" variant="outline" className="h-8" onClick={() => concluirLimpeza(quarto)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8"
+                          disabled={limpandoId === roomId}
+                          onClick={() => concluirLimpeza(quarto)}
+                        >
                           <Check className="mr-1.5 h-4 w-4" />
                           Limpeza concluída
                         </Button>
