@@ -20,6 +20,15 @@ import { useConcluirLimpeza } from "../../lib/useConcluirLimpeza";
 const diariaInformada = (valor) =>
   valor !== null && valor !== undefined && valor !== "";
 
+// Quartos e reservas do painel; em caso de erro, listas vazias.
+async function buscarDadosDoPainel() {
+  try {
+    return await Promise.all([fetchRooms(), fetchReservations()]);
+  } catch {
+    return [[], []];
+  }
+}
+
 function DashboardADM() {
   const { role } = useUser();
   const podeLimpar = CLEANING_ROLES.includes(role);
@@ -32,20 +41,27 @@ function DashboardADM() {
 
   const filtros = ["Todos", "Livre", "Ocupado", "Limpeza Pendente"];
 
-  const carregarDados = async () => {
-    try {
-      const [rooms, bookings] = await Promise.all([fetchRooms(), fetchReservations()]);
+  const aplicarDados = ([rooms, bookings]) => {
+    setQuartos(rooms);
+    setReservas(bookings);
+  };
 
-      setQuartos(rooms);
-      setReservas(bookings);
-    } catch {
-      setQuartos([]);
-      setReservas([]);
-    }
+  // Usado para recarregar depois de check-in, check-out e limpeza.
+  const carregarDados = async () => {
+    aplicarDados(await buscarDadosDoPainel());
   };
 
   useEffect(() => {
-    carregarDados();
+    // "ativo" evita atualizar o estado se a tela for fechada antes da resposta.
+    let ativo = true;
+
+    buscarDadosDoPainel().then((dados) => {
+      if (ativo) aplicarDados(dados);
+    });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const lista = useMemo(() => {

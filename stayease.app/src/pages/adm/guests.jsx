@@ -48,18 +48,23 @@ function Guests() {
   const [form, setForm] = useState(hospedeVazio);
   const [buscaHospede, setBuscaHospede] = useState("");
 
-  const carregarHospedes = async () => {
-    try {
-      const dados = await fetchGuests();
-      setHospedes(dados);
-    } catch {
-      setHospedes([]);
-      toast.error("Não foi possível carregar os hóspedes.");
-    }
-  };
-
   useEffect(() => {
-    carregarHospedes();
+    // "ativo" evita atualizar o estado se a tela for fechada antes da resposta.
+    let ativo = true;
+
+    fetchGuests()
+      .then((dados) => {
+        if (ativo) setHospedes(dados);
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setHospedes([]);
+        toast.error("Não foi possível carregar os hóspedes.");
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const hospedesFiltrados = useMemo(() => {

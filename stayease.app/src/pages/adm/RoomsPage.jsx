@@ -73,18 +73,23 @@ function Quartos() {
   const [aberto, setAberto] = useState(false);
   const [form, setForm] = useState(quartoVazio);
 
-  const carregarQuartos = async () => {
-    try {
-      const dados = await fetchRooms();
-      setQuartos(dados);
-    } catch {
-      setQuartos([]);
-      toast.error("Não foi possível carregar os quartos.");
-    }
-  };
-
   useEffect(() => {
-    carregarQuartos();
+    // "ativo" evita atualizar o estado se a tela for fechada antes da resposta.
+    let ativo = true;
+
+    fetchRooms()
+      .then((dados) => {
+        if (ativo) setQuartos(dados);
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setQuartos([]);
+        toast.error("Não foi possível carregar os quartos.");
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const abrirNovo = () => {

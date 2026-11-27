@@ -149,7 +149,13 @@ function BuscarDisponibilidade() {
         </p>
       )}
 
-      {buscou && periodoValido && (
+      {buscou && periodoValido && carregandoQuartos && (
+        <p className="text-sm text-muted-foreground">
+          Carregando quartos...
+        </p>
+      )}
+
+      {buscou && periodoValido && !carregandoQuartos && (
         <section className="space-y-4">
           <h2 className="font-display text-xl font-semibold text-foreground">
             {resultados.length} quarto(s) disponíveis de{" "}
