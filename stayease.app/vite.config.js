@@ -14,4 +14,10 @@ export default defineConfig({
             },
         },
     },
+    test: {
+        // jsdom provides window, localStorage and events used by the session code.
+        environment: 'jsdom',
+        include: ['src/**/*.test.{js,jsx}'],
+        restoreMocks: true,
+    },
 });

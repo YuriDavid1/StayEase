@@ -12,6 +12,7 @@ import {
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { fetchRooms } from "../../services/roomsService";
+import { calcularNoites, formatarData, formatarMoeda } from "../../lib/formatters";
 
 function hojeISO() {
   const hoje = new Date();
@@ -32,31 +33,6 @@ function somarDias(data, quantidade) {
   const dia = String(resultado.getDate()).padStart(2, "0");
 
   return `${ano}-${mes}-${dia}`;
-}
-
-function noites(entrada, saida) {
-  if (!entrada || !saida) return 0;
-
-  const inicio = new Date(`${entrada}T00:00:00`);
-  const fim = new Date(`${saida}T00:00:00`);
-
-  return Math.max(
-    0,
-    Math.round((fim - inicio) / (1000 * 60 * 60 * 24))
-  );
-}
-
-function dataBR(data) {
-  if (!data) return "—";
-
-  return new Date(`${data}T00:00:00`).toLocaleDateString("pt-BR");
-}
-
-function moeda(valor) {
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
 }
 
 function BuscarDisponibilidade() {
@@ -86,7 +62,7 @@ function BuscarDisponibilidade() {
     carregarQuartos();
   }, []);
 
-  const periodoValido = noites(entrada, saida) > 0;
+  const periodoValido = calcularNoites(entrada, saida) > 0;
 
   const resultados = periodoValido
     ? quartos.filter(
@@ -97,7 +73,7 @@ function BuscarDisponibilidade() {
       )
     : [];
 
-  const totalNoites = noites(entrada, saida);
+  const totalNoites = calcularNoites(entrada, saida);
 
   return (
     <div className="space-y-8">
@@ -173,11 +149,17 @@ function BuscarDisponibilidade() {
         </p>
       )}
 
-      {buscou && periodoValido && (
+      {buscou && periodoValido && carregandoQuartos && (
+        <p className="text-sm text-muted-foreground">
+          Carregando quartos...
+        </p>
+      )}
+
+      {buscou && periodoValido && !carregandoQuartos && (
         <section className="space-y-4">
           <h2 className="font-display text-xl font-semibold text-foreground">
             {resultados.length} quarto(s) disponíveis de{" "}
-            {dataBR(entrada)} a {dataBR(saida)}
+            {formatarData(entrada)} a {formatarData(saida)}
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -204,14 +186,14 @@ function BuscarDisponibilidade() {
                     </span>
 
                     <span>
-                      {moeda(quarto.diaria)} / noite
+                      {formatarMoeda(quarto.diaria)} / noite
                     </span>
                   </div>
 
                   <p className="rounded-lg bg-mare/10 px-3 py-2 text-foreground">
                     Total {totalNoites} noite(s):{" "}
                     <strong>
-                      {moeda(quarto.diaria * totalNoites)}
+                      {formatarMoeda(quarto.diaria * totalNoites)}
                     </strong>
                   </p>
 

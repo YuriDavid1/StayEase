@@ -18,31 +18,7 @@ import {
   checkInReservation,
 } from "../../services/reservationsService";
 import { fetchRoomById } from "../../services/roomsService";
-
-function moeda(valor) {
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
-function dataBR(data) {
-  if (!data) return "—";
-
-  return new Date(`${data}T00:00:00`).toLocaleDateString("pt-BR");
-}
-
-function noites(entrada, saida) {
-  if (!entrada || !saida) return 0;
-
-  const inicio = new Date(`${entrada}T00:00:00`);
-  const fim = new Date(`${saida}T00:00:00`);
-
-  return Math.max(
-    0,
-    Math.round((fim - inicio) / (1000 * 60 * 60 * 24))
-  );
-}
+import { calcularNoites, formatarData, formatarMoeda } from "../../lib/formatters";
 
 function CheckinCliente() {
   const { id } = useParams();
@@ -103,7 +79,7 @@ function CheckinCliente() {
   }
 
   const jaFeito = reserva.status !== "Confirmada";
-  const totalNoites = noites(reserva.entrada, reserva.saida);
+  const totalNoites = calcularNoites(reserva.entrada, reserva.saida);
   const valorTotal = (quarto?.diaria ?? 0) * totalNoites;
 
   async function confirmar() {
@@ -166,8 +142,8 @@ function CheckinCliente() {
 
         <CardContent className="space-y-4 text-sm">
           <p className="text-muted-foreground">
-            {dataBR(reserva.entrada)} — {dataBR(reserva.saida)} ·{" "}
-            {totalNoites} noite(s) · {moeda(valorTotal)}
+            {formatarData(reserva.entrada)} — {formatarData(reserva.saida)} ·{" "}
+            {totalNoites} noite(s) · {formatarMoeda(valorTotal)}
           </p>
 
           <div>

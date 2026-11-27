@@ -44,10 +44,22 @@ export async function finishCleaning(roomId) {
     await api.patch(`/rooms/${roomId}/finish-cleaning`);
 }
 
+// A API ainda não tem GET /api/rooms/{id}, então a busca de um quarto baixa a lista inteira.
+// Em telas com vários quartos (ex.: "Minhas reservas") use fetchRoomsById, que faz uma
+// requisição só, em vez de chamar esta função dentro de um laço.
 export async function fetchRoomById(roomId) {
     const rooms = await fetchRooms();
 
     return rooms.find(
         (room) => String(room.id) === String(roomId)
     ) ?? null;
+}
+
+// Todos os quartos indexados pelo id (em texto), com uma única requisição.
+export async function fetchRoomsById() {
+    const rooms = await fetchRooms();
+
+    return Object.fromEntries(
+        rooms.map((room) => [String(room.id), room])
+    );
 }

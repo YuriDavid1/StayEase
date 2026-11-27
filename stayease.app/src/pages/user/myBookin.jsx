@@ -15,48 +15,11 @@ import {
   fetchReservationsByGuest,
 } from "../../services/reservationsService";
 
-import { fetchRoomById } from "../../services/roomsService";
+import { fetchRoomsById } from "../../services/roomsService";
 
 import { fetchCurrentGuest } from "../../services/guestsService";
+import { calcularNoites, formatarData, formatarMoeda } from "../../lib/formatters";
 
-
-function moeda(valor) {
-  return valor.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
-function dataBR(data) {
-  if (!data) return "—";
-
-  const dataNormalizada = String(data).slice(0, 10);
-
-  return new Date(
-    `${dataNormalizada}T00:00:00`
-  ).toLocaleDateString("pt-BR");
-}
-
-function noites(entrada, saida) {
-  if (!entrada || !saida) return 0;
-
-  const inicio = new Date(
-    `${entrada}T00:00:00`
-  );
-
-  const fim = new Date(
-    `${saida}T00:00:00`
-  );
-
-  const diferenca = fim - inicio;
-
-  return Math.max(
-    0,
-    Math.ceil(
-      diferenca / (1000 * 60 * 60 * 24)
-    )
-  );
-}
 
 const filtros = [
   "Todas",
@@ -86,30 +49,15 @@ function MinhasReservas() {
           return;
         }
 
-        const reservasApi =
-          await fetchReservationsByGuest(hospede.id);
+        // Reservas e quartos em paralelo; os quartos vêm numa requisição só,
+        // em vez de uma por reserva.
+        const [reservasApi, quartosPorId] = await Promise.all([
+          fetchReservationsByGuest(hospede.id),
+          fetchRoomsById(),
+        ]);
 
         setReservas(reservasApi);
-
-        const quartosCarregados = {};
-
-        await Promise.all(
-          reservasApi.map(async (reserva) => {
-            if (!reserva.roomId) return;
-
-            const quarto = await fetchRoomById(
-              reserva.roomId
-            );
-
-            if (quarto) {
-              quartosCarregados[
-                reserva.roomId
-              ] = quarto;
-            }
-          })
-        );
-
-        setQuartos(quartosCarregados);
+        setQuartos(quartosPorId);
       } catch (error) {
         console.error(
           "Erro ao carregar reservas:",
@@ -212,36 +160,25 @@ function MinhasReservas() {
             const quarto =
               quartos[reserva.roomId];
 
-const entrada =
-  reserva.entrada ||
-  reserva.scheduledCheckIn ||
-  "";
+            const entrada =
+              reserva.entrada ||
+              reserva.scheduledCheckIn ||
+              "";
 
-const saida =
-  reserva.saida ||
-  reserva.scheduledCheckOut ||
-  "";
+            const saida =
+              reserva.saida ||
+              reserva.scheduledCheckOut ||
+              "";
 
-const quantidadeNoites =
-  noites(entrada, saida);
+            const quantidadeNoites =
+              calcularNoites(entrada, saida);
 
-const diaria = Number.isFinite(Number(quarto?.diaria))
-  ? Number(quarto.diaria)
-  : 0;
+            const diaria = Number.isFinite(Number(quarto?.diaria))
+              ? Number(quarto.diaria)
+              : 0;
 
-
-const valorTotal =
-  diaria * quantidadeNoites;
-
-console.log("DEBUG MYBOOKIN:", {
-  reserva,
-  quarto,
-  entrada,
-  saida,
-  quantidadeNoites,
-  diaria,
-  valorTotal: diaria * quantidadeNoites,
-});
+            const valorTotal =
+              diaria * quantidadeNoites;
 
             return (
               <Card
@@ -278,7 +215,7 @@ console.log("DEBUG MYBOOKIN:", {
                       </span>
 
                       <span className="text-sm font-medium">
-                        {dataBR(
+                        {formatarData(
                           entrada
                         )}
                       </span>
@@ -290,7 +227,7 @@ console.log("DEBUG MYBOOKIN:", {
                       </span>
 
                       <span className="text-sm font-medium">
-                        {dataBR(
+                        {formatarData(
                           saida
                         )}
                       </span>
@@ -302,7 +239,7 @@ console.log("DEBUG MYBOOKIN:", {
                       </span>
 
                       <span className="text-sm font-medium">
-                        {moeda(valorTotal)}
+                        {formatarMoeda(valorTotal)}
                       </span>
                     </div>
 

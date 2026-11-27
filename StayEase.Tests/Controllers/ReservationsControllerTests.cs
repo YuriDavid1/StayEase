@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StayEase.Api.Controllers;
+using StayEase.Api.Data;
 using StayEase.Api.Dtos;
 using StayEase.Api.Models;
 using StayEase.Api.Services;
@@ -8,6 +9,24 @@ namespace StayEase.Tests.Controllers;
 
 public class ReservationsControllerTests
 {
+    /// <summary>
+    /// As consultas do ReservationService fazem Include de Room e Guest, que são navegações
+    /// obrigatórias: reservas sem quarto e hóspede cadastrados são descartadas da consulta.
+    /// Por isso todo teste de leitura precisa semear os quartos e hóspedes referenciados.
+    /// </summary>
+    private static void SeedRoomsAndGuests(AppDbContext db, int[] roomIds, int[] guestIds)
+    {
+        foreach (var roomId in roomIds)
+        {
+            db.Rooms.Add(new Room { RoomId = roomId, Number = $"{100 + roomId}", Type = "Standard", Capacity = 2 });
+        }
+
+        foreach (var guestId in guestIds)
+        {
+            db.Guests.Add(new Guest { GuestId = guestId, Name = $"Hóspede {guestId}", Document = $"{guestId}", Contact = "47999999999" });
+        }
+    }
+
     [Fact]
     public async Task GetActiveReservations_DeveRetornarSomenteReservasAtivas()
     {
@@ -44,6 +63,7 @@ public class ReservationsControllerTests
             ActualCheckOut = DateTime.UtcNow
         };
 
+        SeedRoomsAndGuests(db, roomIds: [1, 2, 3], guestIds: [1, 2, 3]);
         db.Reservations.AddRange(
             activeReservation,
             cancelledReservation,
@@ -97,6 +117,7 @@ public class ReservationsControllerTests
         // Arrange
         using var db = TestDbContextFactory.Create();
 
+        SeedRoomsAndGuests(db, roomIds: [1, 2], guestIds: [1, 2]);
         db.Reservations.AddRange(
             new Reservation
             {
@@ -209,6 +230,7 @@ public class ReservationsControllerTests
             ScheduledCheckOut = DateTime.UtcNow.AddDays(2)
         };
 
+        SeedRoomsAndGuests(db, roomIds: [1], guestIds: [1]);
         db.Reservations.Add(reservation);
         await db.SaveChangesAsync();
 
@@ -278,6 +300,7 @@ public class ReservationsControllerTests
             ScheduledCheckOut = DateTime.UtcNow.AddDays(3)
         };
 
+        SeedRoomsAndGuests(db, roomIds: [1, 2, 3], guestIds: [10, 20]);
         db.Reservations.AddRange(
             reservation1,
             reservation2,
@@ -357,6 +380,7 @@ public class ReservationsControllerTests
             ScheduledCheckOut = DateTime.UtcNow.AddDays(3)
         };
 
+        SeedRoomsAndGuests(db, roomIds: [1, 2], guestIds: [10, 20, 30]);
         db.Reservations.AddRange(
             reservation1,
             reservation2,
@@ -615,10 +639,15 @@ public class ReservationsControllerTests
             ScheduledCheckOut = DateTime.UtcNow.AddDays(2)
         };
 
+        SeedRoomsAndGuests(db, roomIds: [1], guestIds: [1]);
         db.Reservations.Add(reservation);
         await db.SaveChangesAsync();
 
         var controller = new ReservationsController(new ReservationService(db));
+
+        // Pré-condição: sem isso o teste passaria mesmo com o filtro quebrado.
+        var before = Assert.IsType<OkObjectResult>(await controller.GetActiveReservations());
+        Assert.Single(Assert.IsAssignableFrom<IEnumerable<Reservation>>(before.Value));
 
         // Act
         await controller.Cancel(reservation.ReservationId);
@@ -650,11 +679,15 @@ public class ReservationsControllerTests
             ActualCheckIn = DateTime.UtcNow
         };
 
-        db.Rooms.Add(new Room { RoomId = 1, Number = "101", Type = "Standard", Capacity = 2 });
+        SeedRoomsAndGuests(db, roomIds: [1], guestIds: [1]);
         db.Reservations.Add(reservation);
         await db.SaveChangesAsync();
 
         var controller = new ReservationsController(new ReservationService(db));
+
+        // Pré-condição: sem isso o teste passaria mesmo com o filtro quebrado.
+        var before = Assert.IsType<OkObjectResult>(await controller.GetActiveReservations());
+        Assert.Single(Assert.IsAssignableFrom<IEnumerable<Reservation>>(before.Value));
 
         // Act
         await controller.CheckOut(reservation.ReservationId);

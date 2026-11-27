@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../../components/ui/card";
+import { formatarMoeda } from "../../lib/formatters";
 
 const comodidades = [
   "Ar-condicionado",
@@ -24,13 +25,6 @@ const comodidades = [
   "Enxoval de praia",
   "Frigobar",
 ];
-
-const moeda = (valor) => {
-  return Number(valor).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-};
 
 function DetalhesQuarto() {
 const { id } = useParams();
@@ -184,7 +178,7 @@ const navegar = (url) => {
         <Card className="h-fit border-mare/40 bg-mare/5">
           <CardHeader className="pb-2">
             <CardTitle className="font-display text-2xl">
-              {moeda(quarto.diaria)}
+              {formatarMoeda(quarto.diaria)}
 
               <span className="text-sm font-normal text-muted-foreground">
                 {" "}
@@ -235,7 +229,7 @@ const navegar = (url) => {
             <p className="text-foreground">
               Total estimado:{" "}
               <strong>
-                {moeda(valorEstimado)}
+                {formatarMoeda(valorEstimado)}
               </strong>
             </p>
 
