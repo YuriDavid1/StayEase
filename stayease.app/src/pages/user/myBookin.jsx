@@ -15,7 +15,7 @@ import {
   fetchReservationsByGuest,
 } from "../../services/reservationsService";
 
-import { fetchRoomById } from "../../services/roomsService";
+import { fetchRoomsById } from "../../services/roomsService";
 
 import { fetchCurrentGuest } from "../../services/guestsService";
 import { calcularNoites, formatarData, formatarMoeda } from "../../lib/formatters";
@@ -49,30 +49,15 @@ function MinhasReservas() {
           return;
         }
 
-        const reservasApi =
-          await fetchReservationsByGuest(hospede.id);
+        // Reservas e quartos em paralelo; os quartos vêm numa requisição só,
+        // em vez de uma por reserva.
+        const [reservasApi, quartosPorId] = await Promise.all([
+          fetchReservationsByGuest(hospede.id),
+          fetchRoomsById(),
+        ]);
 
         setReservas(reservasApi);
-
-        const quartosCarregados = {};
-
-        await Promise.all(
-          reservasApi.map(async (reserva) => {
-            if (!reserva.roomId) return;
-
-            const quarto = await fetchRoomById(
-              reserva.roomId
-            );
-
-            if (quarto) {
-              quartosCarregados[
-                reserva.roomId
-              ] = quarto;
-            }
-          })
-        );
-
-        setQuartos(quartosCarregados);
+        setQuartos(quartosPorId);
       } catch (error) {
         console.error(
           "Erro ao carregar reservas:",
