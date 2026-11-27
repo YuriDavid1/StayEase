@@ -41,9 +41,10 @@ import {
   createRoom,
   deleteRoom,
   fetchRooms,
-  finishCleaning,
   updateRoom,
 } from "../../services/roomsService";
+import { formatarMoeda } from "../../lib/formatters";
+import { useConcluirLimpeza } from "../../lib/useConcluirLimpeza";
 
 const quartoVazio = {
   id: "",
@@ -52,17 +53,6 @@ const quartoVazio = {
   capacidade: 2,
   diaria: 300,
   status: "Livre",
-};
-
-const moeda = (valor) => {
-  if (valor === null || valor === undefined || valor === "") {
-    return "R$ 0,00";
-  }
-
-  return Number(valor).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
 };
 
 const getStatusClass = (status) => {
@@ -83,18 +73,23 @@ function Quartos() {
   const [aberto, setAberto] = useState(false);
   const [form, setForm] = useState(quartoVazio);
 
-  const carregarQuartos = async () => {
-    try {
-      const dados = await fetchRooms();
-      setQuartos(dados);
-    } catch {
-      setQuartos([]);
-      toast.error("Não foi possível carregar os quartos.");
-    }
-  };
-
   useEffect(() => {
-    carregarQuartos();
+    // "ativo" evita atualizar o estado se a tela for fechada antes da resposta.
+    let ativo = true;
+
+    fetchRooms()
+      .then((dados) => {
+        if (ativo) setQuartos(dados);
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setQuartos([]);
+        toast.error("Não foi possível carregar os quartos.");
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const abrirNovo = () => {
@@ -175,24 +170,17 @@ function Quartos() {
     }
   };
 
-  const concluirLimpeza = async (quarto) => {
-    const roomId = quarto.roomId ?? quarto.id;
-
-    try {
-      await finishCleaning(roomId);
-
-      setQuartos((atual) =>
-        atual.map((item) =>
-          (item.roomId ?? item.id) === roomId
-            ? { ...item, status: "Livre" }
-            : item
-        )
-      );
-      toast.success(`Limpeza do quarto ${quarto.numero} concluída.`);
-    } catch (error) {
-      toast.error(error.message || "Não foi possível concluir a limpeza.");
-    }
+  const marcarComoLivre = (roomId) => {
+    setQuartos((atual) =>
+      atual.map((item) =>
+        (item.roomId ?? item.id) === roomId
+          ? { ...item, status: "Livre" }
+          : item
+      )
+    );
   };
+
+  const { concluirLimpeza, limpandoId } = useConcluirLimpeza(marcarComoLivre);
 
   return (
     <div className="space-y-6">
@@ -308,7 +296,7 @@ function Quartos() {
                   <TableCell className="font-medium">{quarto.numero}</TableCell>
                   <TableCell>{quarto.tipo}</TableCell>
                   <TableCell>{quarto.capacidade}</TableCell>
-                  <TableCell>{moeda(diaria)}</TableCell>
+                  <TableCell>{formatarMoeda(diaria)}</TableCell>
 
                   <TableCell className="min-w-[280px]">
                     <div className="flex items-center gap-10 whitespace-nowrap">
@@ -317,7 +305,13 @@ function Quartos() {
                       </Badge>
 
                       {quarto.status === "Limpeza Pendente" && (
-                        <Button size="sm" variant="outline" className="h-8" onClick={() => concluirLimpeza(quarto)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8"
+                          disabled={limpandoId === roomId}
+                          onClick={() => concluirLimpeza(quarto)}
+                        >
                           <Check className="mr-1.5 h-4 w-4" />
                           Limpeza concluída
                         </Button>

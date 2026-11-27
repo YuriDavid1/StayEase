@@ -11,9 +11,23 @@ import {
   checkOutReservation,
   fetchReservations,
 } from "../../services/reservationsService";
-import { fetchRooms, finishCleaning } from "../../services/roomsService";
+import { fetchRooms } from "../../services/roomsService";
 import { CLEANING_ROLES, FRONT_DESK_ROLES } from "../../lib/authSession";
 import { useUser } from "../../lib/useUser";
+import { formatarMoeda } from "../../lib/formatters";
+import { useConcluirLimpeza } from "../../lib/useConcluirLimpeza";
+
+const diariaInformada = (valor) =>
+  valor !== null && valor !== undefined && valor !== "";
+
+// Quartos e reservas do painel; em caso de erro, listas vazias.
+async function buscarDadosDoPainel() {
+  try {
+    return await Promise.all([fetchRooms(), fetchReservations()]);
+  } catch {
+    return [[], []];
+  }
+}
 
 function DashboardADM() {
   const { role } = useUser();
@@ -27,31 +41,27 @@ function DashboardADM() {
 
   const filtros = ["Todos", "Livre", "Ocupado", "Limpeza Pendente"];
 
-  const moeda = (valor) => {
-    if (valor === null || valor === undefined || valor === "") {
-      return "Não informada";
-    }
-
-    return Number(valor).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
+  const aplicarDados = ([rooms, bookings]) => {
+    setQuartos(rooms);
+    setReservas(bookings);
   };
 
+  // Usado para recarregar depois de check-in, check-out e limpeza.
   const carregarDados = async () => {
-    try {
-      const [rooms, bookings] = await Promise.all([fetchRooms(), fetchReservations()]);
-
-      setQuartos(rooms);
-      setReservas(bookings);
-    } catch {
-      setQuartos([]);
-      setReservas([]);
-    }
+    aplicarDados(await buscarDadosDoPainel());
   };
 
   useEffect(() => {
-    carregarDados();
+    // "ativo" evita atualizar o estado se a tela for fechada antes da resposta.
+    let ativo = true;
+
+    buscarDadosDoPainel().then((dados) => {
+      if (ativo) aplicarDados(dados);
+    });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const lista = useMemo(() => {
@@ -80,14 +90,7 @@ function DashboardADM() {
     return linha?.guestName || null;
   };
 
-  const concluirLimpeza = async (quarto) => {
-    try {
-      await finishCleaning(quarto.roomId ?? quarto.id);
-      await carregarDados();
-    } catch (error) {
-      toast.error(error.message || "Não foi possível concluir a limpeza.");
-    }
-  };
+  const { concluirLimpeza, limpandoId } = useConcluirLimpeza(carregarDados);
 
   const realizarCheckin = async (quarto) => {
     const reserva = reservas.find(
@@ -231,7 +234,7 @@ function DashboardADM() {
                       {quarto.tipo} · {quarto.capacidade} pessoa(s)
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Diária: {moeda(quarto.diaria)}
+                      Diária: {diariaInformada(quarto.diaria) ? formatarMoeda(quarto.diaria) : "Não informada"}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Hóspede: {hospedeAtual || "Nenhum"}
@@ -241,7 +244,11 @@ function DashboardADM() {
 
                 <div className="flex flex-wrap gap-2">
                   {podeLimpar && quarto.status === "Limpeza Pendente" && (
-                    <Button onClick={() => concluirLimpeza(quarto)} size="sm">
+                    <Button
+                      onClick={() => concluirLimpeza(quarto)}
+                      disabled={limpandoId === roomId}
+                      size="sm"
+                    >
                       <Sparkles className="mr-1 h-4 w-4" />
                       Limpeza concluída
                     </Button>

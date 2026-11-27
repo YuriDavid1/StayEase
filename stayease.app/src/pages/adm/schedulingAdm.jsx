@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { toast } from "sonner";
 
@@ -58,6 +58,7 @@ import {
   createReservation,
   fetchReservations,
 } from "../../services/reservationsService";
+import { formatarData } from "../../lib/formatters";
 
 function hojeISO() {
   return new Date().toISOString().slice(0, 10);
@@ -69,10 +70,32 @@ function amanhaISO() {
   return data.toISOString().slice(0, 10);
 }
 
-function dataBR(data) {
-  if (!data) return "—";
-  const [ano, mes, dia] = String(data).split("-");
-  return `${dia}/${mes}/${ano}`;
+// Hóspedes, quartos e reservas da tela; em caso de erro, listas vazias.
+async function buscarDadosDasReservas() {
+  try {
+    return await Promise.all([fetchGuests(), fetchRooms(), fetchReservations()]);
+  } catch {
+    return [[], [], []];
+  }
+}
+
+// true se o quarto já tem reserva ativa que se sobrepõe ao período.
+// reservaId é ignorado na comparação (usado ao editar uma reserva existente).
+function conflitoDeDatas(reservas, quartoId, entrada, saida, reservaId) {
+  return reservas.some((reserva) => {
+    const itemId = reserva.reservationId ?? reserva.id;
+    if (itemId === reservaId) return false;
+    if (String(reserva.roomId) !== String(quartoId)) return false;
+    if (reserva.status === "Cancelada") return false;
+    return entrada < reserva.saida && saida > reserva.entrada;
+  });
+}
+
+function quartosDisponiveis(quartos, reservas, entrada, saida) {
+  return quartos.filter((quarto) => {
+    if (quarto.status !== "Livre") return false;
+    return !conflitoDeDatas(reservas, quarto.roomId ?? quarto.id, entrada, saida, null);
+  });
 }
 
 function StatusQuartoBadge({ status }) {
@@ -106,49 +129,36 @@ function Reservas() {
   const [buscaHospedeLista, setBuscaHospedeLista] = useState("");
   const [filtroData, setFiltroData] = useState("");
 
-  const carregarDados = async () => {
-    try {
-      const [guests, rooms, bookings] = await Promise.all([
-        fetchGuests(),
-        fetchRooms(),
-        fetchReservations(),
-      ]);
+  const aplicarDados = ([guests, rooms, bookings]) => {
+    setHospedes(guests);
+    setQuartos(rooms);
+    setReservas(bookings);
+  };
 
-      setHospedes(guests);
-      setQuartos(rooms);
-      setReservas(bookings);
-    } catch {
-      setHospedes([]);
-      setQuartos([]);
-      setReservas([]);
-    }
+  // Usado para recarregar depois de salvar ou cancelar uma reserva.
+  const carregarDados = async () => {
+    aplicarDados(await buscarDadosDasReservas());
   };
 
   useEffect(() => {
-    carregarDados();
+    // "ativo" evita atualizar o estado se a tela for fechada antes da resposta.
+    let ativo = true;
+
+    buscarDadosDasReservas().then((dados) => {
+      if (ativo) aplicarDados(dados);
+    });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
-  const hospedePorId = (id) =>
-    hospedes.find((hospede) => String(hospede.guestId ?? hospede.id) === String(id));
+  const hospedePorId = useCallback(
+    (id) => hospedes.find((hospede) => String(hospede.guestId ?? hospede.id) === String(id)),
+    [hospedes]
+  );
   const quartoPorId = (id) =>
     quartos.find((quarto) => String(quarto.roomId ?? quarto.id) === String(id));
-
-  const conflitoDeDatas = (quartoId, entrada, saida, reservaId) => {
-    return reservas.some((reserva) => {
-      const itemId = reserva.reservationId ?? reserva.id;
-      if (itemId === reservaId) return false;
-      if (String(reserva.roomId) !== String(quartoId)) return false;
-      if (reserva.status === "Cancelada") return false;
-      return entrada < reserva.saida && saida > reserva.entrada;
-    });
-  };
-
-  const quartosDisponiveis = (entrada, saida) => {
-    return quartos.filter((quarto) => {
-      if (quarto.status !== "Livre") return false;
-      return !conflitoDeDatas(quarto.roomId ?? quarto.id, entrada, saida, null);
-    });
-  };
 
   const hospedesFiltrados = useMemo(() => {
     const termo = buscaHospede.trim().toLowerCase();
@@ -165,15 +175,15 @@ function Reservas() {
       const correspondeAData = !filtroData || reserva.entrada === filtroData;
       return correspondeAoNome && correspondeAData;
     });
-  }, [reservas, buscaHospedeLista, filtroData, hospedes]);
+  }, [reservas, buscaHospedeLista, filtroData, hospedePorId]);
 
   const disponiveis = useMemo(
-    () => quartosDisponiveis(form.entrada, form.saida),
+    () => quartosDisponiveis(quartos, reservas, form.entrada, form.saida),
     [form.entrada, form.saida, quartos, reservas]
   );
 
   const disponiveisConsulta = useMemo(
-    () => quartosDisponiveis(consulta.entrada, consulta.saida),
+    () => quartosDisponiveis(quartos, reservas, consulta.entrada, consulta.saida),
     [consulta.entrada, consulta.saida, quartos, reservas]
   );
 
@@ -197,7 +207,7 @@ function Reservas() {
       return;
     }
 
-    if (conflitoDeDatas(roomId, form.entrada, form.saida, form.id)) {
+    if (conflitoDeDatas(reservas, roomId, form.entrada, form.saida, form.id)) {
       toast.error("Já existe reserva para este quarto no período informado.");
       return;
     }
@@ -475,8 +485,8 @@ function Reservas() {
                       <TableCell>
                         {quarto ? `${quarto.numero} — ${quarto.tipo}` : reserva.roomNumber || "—"}
                       </TableCell>
-                      <TableCell>{dataBR(reserva.entrada)}</TableCell>
-                      <TableCell>{dataBR(reserva.saida)}</TableCell>
+                      <TableCell>{formatarData(reserva.entrada)}</TableCell>
+                      <TableCell>{formatarData(reserva.saida)}</TableCell>
                       <TableCell>
                         <StatusQuartoBadge status={reserva.status} />
                       </TableCell>

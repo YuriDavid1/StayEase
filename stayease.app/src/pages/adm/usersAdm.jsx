@@ -50,18 +50,23 @@ function Users() {
   const [form, setForm] = useState(usuarioVazio);
   const [busca, setBusca] = useState("");
 
-  const carregarUsuarios = async () => {
-    try {
-      const dados = await fetchUsers();
-      setUsuarios(dados);
-    } catch {
-      setUsuarios([]);
-      toast.error("Não foi possível carregar os usuários.");
-    }
-  };
-
   useEffect(() => {
-    carregarUsuarios();
+    // "ativo" evita atualizar o estado se a tela for fechada antes da resposta.
+    let ativo = true;
+
+    fetchUsers()
+      .then((dados) => {
+        if (ativo) setUsuarios(dados);
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setUsuarios([]);
+        toast.error("Não foi possível carregar os usuários.");
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const usuariosFiltrados = useMemo(() => {
